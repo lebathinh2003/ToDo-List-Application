@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
@@ -14,7 +15,20 @@ builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
 
-builder.WebHost.UseUrls($"http://*:5000");
+//builder.WebHost.UseUrls($"http://*:5000");
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(5000, listenOptions =>
+    {
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+    });
+
+    options.ListenLocalhost(6000, listenOptions =>
+    {
+        listenOptions.UseHttps();
+        listenOptions.Protocols = HttpProtocols.Http2;
+    });
+});
 
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", options =>

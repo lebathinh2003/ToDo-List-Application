@@ -2,6 +2,7 @@
 using IdentityService.API.Extensions;
 using IdentityService.API.Services;
 using IdentityService.Infrastructure;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,20 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.WebHost.UseUrls($"http://*:5001");
+//builder.WebHost.UseUrls($"http://*:5001");
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(5001, listenOptions =>
+    {
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+    });
+
+    options.ListenLocalhost(6001, listenOptions =>
+    {
+        listenOptions.UseHttps();
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+    });
+});
 
 var app = builder.Build();
 
