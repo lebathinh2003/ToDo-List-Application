@@ -19,8 +19,4 @@
     <ProjectReference Include="..\IndentityService.Domain\IndentityService.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Configs\" />
-  </ItemGroup>
-
 </Project>

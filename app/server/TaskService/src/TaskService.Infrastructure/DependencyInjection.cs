@@ -1,8 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Contract.Interfaces;
+using Contract.Utilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TaskService.Domain.Interfaces;
 using TaskService.Infrastructure.Persistence;
+using TaskService.Infrastructure.Persistence.Mockup;
 namespace TaskService.Infrastructure;
 public static class DependencyInjection
 {
@@ -11,6 +14,14 @@ public static class DependencyInjection
         services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+        services.AddScoped(typeof(IPaginateDataUtility<,>), typeof(PaginateDataUtility<,>));
+
+        services.AddScoped<MockupData>();
+        using (var serviceProvider = services.BuildServiceProvider())
+        {
+            var mockupData = serviceProvider.GetRequiredService<MockupData>();
+            mockupData.SeedAllData().Wait();
+        }
         return services;
     }
 }

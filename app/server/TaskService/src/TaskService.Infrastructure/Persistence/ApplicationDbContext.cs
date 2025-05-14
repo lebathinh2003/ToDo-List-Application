@@ -7,7 +7,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
     public DbSet<Task> Tasks { get; set; }
-
+    public DbContext Instance => this;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

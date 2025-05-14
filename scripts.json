@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "Setup back-end": "./scripts/setup-backend.sh",
+    "Run all services": "./scripts/run-all-services.sh",
+    "Build all services": "./scripts/build-all-services.sh",
+    "Apply all migrations": "./scripts/apply-all-migrations.sh"
+  }
+}

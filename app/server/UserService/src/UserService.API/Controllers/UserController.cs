@@ -2,11 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using UserService.API.Requests;
 using UserService.Application.Users.Commands;
+using UserService.Application.Users.Queries;
 
 namespace UserService.API.Controllers;
 
 [ApiController]
-[Route("api/user")]
+[Route("api/users")]
 public class UserController : ControllerBase
 {
     private readonly ISender _sender;
@@ -21,11 +22,24 @@ public class UserController : ControllerBase
     {
         var result = await _sender.Send(new CreateUserCommand
         {
-            UserName = createUserRequest.Username,
+            Username = createUserRequest.Username,
             Email = createUserRequest.Email,
             Password = createUserRequest.Password,
             Fullname = createUserRequest.FullName,
+            Address = createUserRequest.Address,
         });
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUserById([FromQuery] Guid id)
+    {
+        var result = await _sender.Send(new GetUserByIdQuery
+        {
+            Id = id,
+        });
+        
         return Ok(result);
     }
 }

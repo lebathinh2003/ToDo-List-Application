@@ -17,6 +17,10 @@ public class CreateUserRequest
     public string Email { get; set; } = null!;
 
     [Required]
+    [MaxLength(100)]
+    public string Address { get; set; } = null!;
+
+    [Required]
     [MaxLength(50)]
     public string Password { get; set; } = null!;
 }

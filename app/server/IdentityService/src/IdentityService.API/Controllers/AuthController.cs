@@ -1,63 +1,58 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using IndentityService.Domain.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using IdentityService.API.Request;
+using Duende.IdentityModel.Client;
 
 [ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+    public AuthController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory)
     {
+        _signInManager = signInManager;
         _userManager = userManager;
-        _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userManager.FindByNameAsync(request.Username);
-        if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+
+        if (user == null) return Unauthorized("Invalid credentials");
+
+        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+        if (!result.Succeeded) return Unauthorized("Invalid credentials");
+
+        var client = _httpClientFactory.CreateClient();
+        var disco = await client.GetDiscoveryDocumentAsync("http://localhost:5001"); // IdentityServer URL
+
+        if (disco.IsError)
+            return StatusCode(500, disco.Error);
+
+        var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
         {
-            return Unauthorized("Invalid credentials");
-        }
+            Address = disco.TokenEndpoint,
+            ClientId = "my-client",
+            ClientSecret = "secret",
+            Scope = "openid roles",
+            UserName = request.Username,
+            Password = request.Password
+        });
 
-        var roles = await _userManager.GetRolesAsync(user);
+        if (tokenResponse.IsError)
+            return Unauthorized(tokenResponse.Error);
 
-        var claims = new List<Claim>
+        return Ok(new
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.UserName!),
-        };
-
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
-        var jwtSettings = _configuration.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"],
-            audience: jwtSettings["Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
-            signingCredentials: creds
-        );
-
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        return Ok(new { token = tokenString });
+            access_token = tokenResponse.AccessToken,
+            expires_in = tokenResponse.ExpiresIn
+        });
     }
 }
+

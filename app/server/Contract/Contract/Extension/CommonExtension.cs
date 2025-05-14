@@ -7,11 +7,6 @@ using MassTransit;
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Newtonsoft.Json;
-using Serilog;
-using Microsoft.IdentityModel.Tokens;
-using Polly;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Logging;
 using Contract.Middleware;
 
 namespace Contract.Extension;
@@ -22,9 +17,7 @@ public static class CommonExtension
     {
         EnvUtility.LoadEnvFile();
 
-        builder.ConfigureSerilog();
         builder.ConfigureKestrel();
-        builder.ConfigureHealthCheck();
         return builder;
     }
 
@@ -50,7 +43,7 @@ public static class CommonExtension
 
         services.AddHttpContextAccessor();
 
-        services.AddCustomDownstreamAuthentication();
+        //services.AddCustomDownstreamAuthentication();
 
         return services;
     }
@@ -104,137 +97,135 @@ public static class CommonExtension
     public static IServiceCollection AddAPIGatewayAPIServices(this IServiceCollection services)
     {
         EnvUtility.LoadEnvFile();
-        services.AddCustomAuthentication();
+        //services.AddCustomAuthentication();
 
         return services;
     }
 
-    private static IServiceCollection AddCustomAuthentication(this IServiceCollection services)
-    {
-        var retryPolicy = Polly.Policy.Handle<Exception>()
-            .WaitAndRetryAsync(
-                retryCount: 100,
-                sleepDurationProvider: attempt => TimeSpan.FromSeconds(attempt),
-                onRetry: (exception, timeSpan, retryCount, context) =>
-                {
-                    // Log the retry attempt
-                    Log.Warning($"Retry {retryCount} encountered an error: {exception.Message}. Waiting {timeSpan} before next retry.");
-                });
+    //private static IServiceCollection AddCustomAuthentication(this IServiceCollection services)
+    //{
+    //    var retryPolicy = Polly.Policy.Handle<Exception>()
+    //        .WaitAndRetryAsync(
+    //            retryCount: 100,
+    //            sleepDurationProvider: attempt => TimeSpan.FromSeconds(attempt),
+    //            onRetry: (exception, timeSpan, retryCount, context) =>
+    //            {
+    //                // Log the retry attempt
+    //                Log.Warning($"Retry {retryCount} encountered an error: {exception.Message}. Waiting {timeSpan} before next retry.");
+    //            });
 
-        services.AddAuthentication("Bearer")
-            .AddJwtBearer("Bearer", options =>
-            {
-                var serviceProvider = services.BuildServiceProvider();
-                var identityUri = retryPolicy.ExecuteAsync(() =>
-                {
-                    var uri = "CONSUL_IDENTITY";
-                    return uri == null ? throw new Exception("Identity service URI not found.") : Task.FromResult(uri);
-                }).GetAwaiter().GetResult();
+    //    services.AddAuthentication("Bearer")
+    //        .AddJwtBearer("Bearer", options =>
+    //        {
+    //            var serviceProvider = services.BuildServiceProvider();
+    //            var identityUri = retryPolicy.ExecuteAsync(() =>
+    //            {
+    //                var uri = "CONSUL_IDENTITY";
+    //                return uri == null ? throw new Exception("Identity service URI not found.") : Task.FromResult(uri);
+    //            }).GetAwaiter().GetResult();
 
-                Log.Information("Connect to Identity Provider: " + identityUri!.ToString());
+    //            Log.Information("Connect to Identity Provider: " + identityUri!.ToString());
 
-                options.RequireHttpsMetadata = false;
-                options.Authority = identityUri!.ToString();
-                // Clear default Microsoft's JWT claim mapping
-                // Ref: https://stackoverflow.com/questions/70766577/asp-net-core-jwt-token-is-transformed-after-authentication
-                options.MapInboundClaims = false;
+    //            options.RequireHttpsMetadata = false;
+    //            options.Authority = identityUri!.ToString();
+    //            // Clear default Microsoft's JWT claim mapping
+    //            // Ref: https://stackoverflow.com/questions/70766577/asp-net-core-jwt-token-is-transformed-after-authentication
+    //            options.MapInboundClaims = false;
 
-                options.TokenValidationParameters.ValidTypes = ["at+jwt"];
+    //            options.TokenValidationParameters.ValidTypes = ["at+jwt"];
 
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateAudience = false,
-                    ValidateIssuer = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-                // For development only
-                options.IncludeErrorDetails = true;
+    //            options.TokenValidationParameters = new TokenValidationParameters
+    //            {
+    //                ValidateAudience = false,
+    //                ValidateIssuer = false,
+    //                ValidateLifetime = true,
+    //                ClockSkew = TimeSpan.Zero
+    //            };
+    //            // For development only
+    //            options.IncludeErrorDetails = true;
 
-                options.BackchannelHttpHandler = new HttpClientHandler
-                {
-                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-                };
+    //            options.BackchannelHttpHandler = new HttpClientHandler
+    //            {
+    //                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    //            };
 
-                options.Events = new JwtBearerEvents
-                {
-                    OnTokenValidated = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILoggerFactory>()
-                            .CreateLogger("JwtBearer");
-                        logger.LogInformation("Token validated successfully.");
-                        return Task.CompletedTask;
-                    },
-                    OnAuthenticationFailed = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILoggerFactory>()
-                            .CreateLogger("JwtBearer");
-                        logger.LogError(context.Exception, "Token authentication failed.");
-                        return Task.CompletedTask;
-                    }
-                };
-            });
-        return services;
-    }
+    //            options.Events = new JwtBearerEvents
+    //            {
+    //                OnTokenValidated = context =>
+    //                {
+    //                    var logger = context.HttpContext.RequestServices
+    //                        .GetRequiredService<ILoggerFactory>()
+    //                        .CreateLogger("JwtBearer");
+    //                    logger.LogInformation("Token validated successfully.");
+    //                    return Task.CompletedTask;
+    //                },
+    //                OnAuthenticationFailed = context =>
+    //                {
+    //                    var logger = context.HttpContext.RequestServices
+    //                        .GetRequiredService<ILoggerFactory>()
+    //                        .CreateLogger("JwtBearer");
+    //                    logger.LogError(context.Exception, "Token authentication failed.");
+    //                    return Task.CompletedTask;
+    //                }
+    //            };
+    //        });
+    //    return services;
+    //}
 
     /**
      * <summary>
      *  Authenticate for downstream service, ignore jwt validation because api gateway does all the heavy work
      * </summary>
      */
-    private static IServiceCollection AddCustomDownstreamAuthentication(this IServiceCollection services)
+    //private static IServiceCollection AddCustomDownstreamAuthentication(this IServiceCollection services)
+    //{
+
+    //    services.AddAuthentication(option =>
+    //    {
+    //        option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    //        option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    //    })
+    //    .AddJwtBearer(options =>
+    //    {
+    //        options.RequireHttpsMetadata = false;
+    //        // Clear default Microsoft's JWT claim mapping
+    //        // Ref: https://stackoverflow.com/questions/70766577/asp-net-core-jwt-token-is-transformed-after-authentication
+    //        options.MapInboundClaims = false;
+    //        options.SaveToken = true;
+
+    //        // Completely disable token validations
+    //        options.TokenValidationParameters = new TokenValidationParameters
+    //        {
+    //            ValidateIssuer = false,
+    //            ValidateAudience = false,
+    //            ValidateIssuerSigningKey = false,
+    //            RequireSignedTokens = false,
+    //            ValidateLifetime = true,
+    //            RequireExpirationTime = true,
+    //            ClockSkew = TimeSpan.Zero,
+    //            /*  
+    //             *  Return JwtSecurityToken(token) will cause this error
+    //             *  
+    //             *  Microsoft.IdentityModel.Tokens.SecurityTokenInvalidSignatureException: IDX10506: Signature validation failed.
+    //             *  The user defined 'Delegate' specified on TokenValidationParameters did not return a 'Microsoft.IdentityModel.JsonWebTokens.JsonWebToken',
+    //             *  but returned a 'System.IdentityModel.Tokens.Jwt.JwtSecurityToken' when validating token: '[PII of type 'Microsoft.IdentityModel.JsonWebTokens.
+    //             *  JsonWebToken' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]'
+    //            */
+    //            SignatureValidator = (token, parameters) => new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token)
+    //        };
+    //        // For development only
+    //        options.IncludeErrorDetails = true;
+    //    });
+    //    return services;
+    //}
+
+    public static WebApplication UseCommonServices(this WebApplication app)
     {
-
-        services.AddAuthentication(option =>
-        {
-            option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = false;
-            // Clear default Microsoft's JWT claim mapping
-            // Ref: https://stackoverflow.com/questions/70766577/asp-net-core-jwt-token-is-transformed-after-authentication
-            options.MapInboundClaims = false;
-            options.SaveToken = true;
-
-            // Completely disable token validations
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateIssuerSigningKey = false,
-                RequireSignedTokens = false,
-                ValidateLifetime = true,
-                RequireExpirationTime = true,
-                ClockSkew = TimeSpan.Zero,
-                /*  
-                 *  Return JwtSecurityToken(token) will cause this error
-                 *  
-                 *  Microsoft.IdentityModel.Tokens.SecurityTokenInvalidSignatureException: IDX10506: Signature validation failed.
-                 *  The user defined 'Delegate' specified on TokenValidationParameters did not return a 'Microsoft.IdentityModel.JsonWebTokens.JsonWebToken',
-                 *  but returned a 'System.IdentityModel.Tokens.Jwt.JwtSecurityToken' when validating token: '[PII of type 'Microsoft.IdentityModel.JsonWebTokens.
-                 *  JsonWebToken' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]'
-                */
-                SignatureValidator = (token, parameters) => new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token)
-            };
-            // For development only
-            options.IncludeErrorDetails = true;
-        });
-        return services;
-    }
-
-    public static WebApplication UseCommonServices(this WebApplication app, string serviceName)
-    {
-        app.UseSerilogServices();
 
         app.UseRouting();
-        app.UseCustomHealthCheck();
 
         app.UseMiddleware<GlobalHandlingErrorMiddleware>();
-        app.UseMiddleware<ValidateGatewayRequestMiddleware>();
+        //app.UseMiddleware<ValidateGatewayRequestMiddleware>();
 
         return app;
     }

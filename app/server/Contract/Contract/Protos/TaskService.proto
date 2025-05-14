@@ -1,34 +1,30 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
-import "Protos/Common.proto";
 
-package RecipeProto;
+package TaskProto;
 
-service GrpcRecipe {
+service GrpcTask {
     rpc GetAllTags(GrpcEmpty) returns (GrpcListTagDTO);
     rpc GetTags(GrpcGetTagsRequest) returns (GrpcMapTagResponse);
-    rpc GetRecipeDetails(GrpcRecipeIdRequest) returns (GrpcRecipeDetailsDTO);
-    rpc GetSimpleRecipes(GrpcGetSimpleRecipeRequest) returns (GrpcMapSimpleRecipes);
+    rpc GetTaskDetails(GrpcTaskIdRequest) returns (GrpcTaskDetailsDTO);
+    rpc GetSimpleTasks(GrpcGetSimpleTaskRequest) returns (GrpcMapSimpleTasks);
     rpc GetSimpleComments(GrpcGetSimpleCommentRequest) returns (GrpcMapSimpleComments);
-    rpc SearchSimpleRecipes(GrpcSearchSimpleRecipeRequest) returns (GrpcMapSimpleRecipes);
-    rpc GetCommentReports(GrpcGetCommentReportRequest) returns (GrpcMapCommentReports);
-    rpc GetRecipeReports(GrpcGetRecipeReportRequest) returns (GrpcMapRecipeReports);
+    rpc SearchSimpleTasks(GrpcSearchSimpleTaskRequest) returns (GrpcMapSimpleTasks);
 }
-////////////////////////// COMMON
 message GrpcEmpty {}
 
-message GrpcRecipeIdRequest{
-    string RecipeId = 1;
+message GrpcTaskIdRequest{
+    string TaskId = 1;
 }
 
-message GrpcGetSimpleRecipeRequest {
+message GrpcGetSimpleTaskRequest {
     string AccountId = 1;
-    repeated string RecipeIds = 2; 
+    repeated string TaskIds = 2; 
 }
 
 message GrpcGetSimpleCommentRequest {
-    repeated string Ids = 1; // Key syntax is recipeId~commentId
+    repeated string Ids = 1; // Key syntax is TaskId~commentId
 }
 
 message GrpcGetCommentReportRequest {
@@ -36,7 +32,7 @@ message GrpcGetCommentReportRequest {
     string Lang = 2;
 }
 
-message GrpcGetRecipeReportRequest {
+message GrpcGetTaskReportRequest {
     repeated string Ids = 1;
     string Lang = 2;
 }
@@ -45,13 +41,13 @@ message GrpcGetTagsRequest {
     repeated string Ids = 1;
 }
 
-message GrpcSearchSimpleRecipeRequest {
+message GrpcSearchSimpleTaskRequest {
     string AccountId = 1;
-    repeated string RecipeIds = 2; 
+    repeated string TaskIds = 2; 
     string Keyword = 3;
 }
 ///////////////////////// Entity DTO
-message GrpcRecipeDetailsDTO{
+message GrpcTaskDetailsDTO{
     string Id = 1;
     string AuthorId = 2;
     string Title = 3;
@@ -99,30 +95,30 @@ message GrpcTagDTO{
     string ImageUrl = 7;
 }
 
-message GrpcRecipeVoteDTO{
+message GrpcTaskVoteDTO{
     string Id = 1;
     string AccountId = 2;
     bool IsUpvote = 3;
 }
 
-message GrpcRecipeTagDTO{
+message GrpcTaskTagDTO{
     string Id = 1;
-    string RecipeId = 2;
+    string TaskId = 2;
     string TagId = 3;
 }
 
-message GrpcMapSimpleRecipes {
-    map<string, GrpcSimpleRecipe> Recipes = 1;
+message GrpcMapSimpleTasks {
+    map<string, GrpcSimpleTask> Tasks = 1;
 }
 
 message GrpcMapSimpleComments {
     map<string, GrpcSimpleComment> Comments = 1;
 }
 
-message GrpcSimpleRecipe {
+message GrpcSimpleTask {
     string Id = 1;
     string AuthorId = 2;
-    string RecipeImgUrl = 3;
+    string TaskImgUrl = 3;
     string Title = 4;
     string Description = 5;
     int32 VoteDiff = 6;
@@ -147,23 +143,3 @@ message GrpcSimpleComment {
     google.protobuf.Timestamp UpdatedAt = 9;
 }
 
-message GrpcCommentReportResponse {
-    CommonProto.GrpcSimpleUser Reporter = 1;
-    GrpcSimpleRecipe Recipe = 2;
-    GrpcSimpleComment Comment = 3;
-    CommonProto.GrpcSimpleReport Report = 4;
-}
-
-message GrpcRecipeReportResponse {
-    CommonProto.GrpcSimpleUser Reporter = 1;
-    GrpcSimpleRecipe Recipe = 2;
-    CommonProto.GrpcSimpleReport Report = 3;
-}
-
-message GrpcMapCommentReports {
-    map<string, GrpcCommentReportResponse> CommentReports = 1;
-}
-
-message GrpcMapRecipeReports {
-    map<string, GrpcRecipeReportResponse> RecipeReports = 1;
-}
