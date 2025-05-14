@@ -40,6 +40,7 @@ public class TasksController : ControllerBase
     [HttpGet("get-tasks")]
     public async Task<IActionResult> AdminGetTasks([FromQuery] PaginatedDTO paginatedDTO)
     {
+        Console.WriteLine("Ok ne 1");
         var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrEmpty(userIdClaim))

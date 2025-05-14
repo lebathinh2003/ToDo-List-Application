@@ -13,6 +13,16 @@ public class UserError
             Message: "They already have the user, abort adding addition user",
             StatusCode: (int)HttpStatusCode.Conflict);
 
+    public static Error UserAlreadyInactive =>
+        new("UserError.UserAlreadyInactive",
+            Message: "This user is already inactive",
+            StatusCode: (int)HttpStatusCode.BadRequest);
+
+    public static Error UserAlreadyActive =>
+        new("UserError.UserAlreadyActive",
+            Message: "This user is already active",
+            StatusCode: (int)HttpStatusCode.BadRequest);
+
     public static Error NullParameters =>
         new("UserError.NullParameters",
             Message: "Some parameter is null check the server's log for full errors",

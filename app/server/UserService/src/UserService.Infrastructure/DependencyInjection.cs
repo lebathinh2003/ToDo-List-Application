@@ -1,5 +1,4 @@
-﻿using Contract.Interfaces;
-using Contract.Utilities;
+﻿using Contract.Extension;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,14 +13,16 @@ public static class DependencyInjection
         services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-        services.AddScoped(typeof(IPaginateDataUtility<,>), typeof(PaginateDataUtility<,>));
-
         services.AddScoped<MockupData>();
+
+        services.AddCommonInfrastructureServices("UserService.API");
+
         using (var serviceProvider = services.BuildServiceProvider())
         {
             var mockupData = serviceProvider.GetRequiredService<MockupData>();
             mockupData.SeedAllData().Wait();
         }
+
         return services;
     }
 }

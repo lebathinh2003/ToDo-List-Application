@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
-using Ocelot.Values;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +10,6 @@ builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange
 
 // Lấy thông tin cấu hình JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
 
 //builder.WebHost.UseUrls($"http://*:5000");
 builder.WebHost.ConfigureKestrel(options =>
@@ -33,7 +29,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", options =>
     {
-        options.Authority = "http://localhost:5000"; // URL của Identity Server
+        options.Authority = jwtSettings["Issuer"]; // URL của Identity Server
         options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {

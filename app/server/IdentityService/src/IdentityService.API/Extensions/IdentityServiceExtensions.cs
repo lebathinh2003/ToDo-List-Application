@@ -24,6 +24,7 @@ public static class IdentityServiceExtensions
         services.AddIdentityServer(options =>
         {
             options.EmitStaticAudienceClaim = true;
+            options.IssuerUri = "http://localhost:5001";
         })
         .AddInMemoryClients(IdentityServerInMemoryConfig.GetClients()) // Không có client nếu dùng ResourceOwnerPassword
         .AddInMemoryIdentityResources(IdentityServerInMemoryConfig.GetIdentityResources()) // Không cần identity resource như openid, profile

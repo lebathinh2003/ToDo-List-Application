@@ -1,4 +1,5 @@
-﻿using Contract.Interfaces;
+﻿using Contract.Extension;
+using Contract.Interfaces;
 using Contract.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +18,9 @@ public static class DependencyInjection
         services.AddScoped(typeof(IPaginateDataUtility<,>), typeof(PaginateDataUtility<,>));
 
         services.AddScoped<MockupData>();
+
+        services.AddCommonInfrastructureServices("TaskService.API");
+
         using (var serviceProvider = services.BuildServiceProvider())
         {
             var mockupData = serviceProvider.GetRequiredService<MockupData>();

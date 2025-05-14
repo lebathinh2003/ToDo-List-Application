@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UserService.API.Requests;
 using UserService.Application.Users.Commands;
@@ -17,6 +18,7 @@ public class UserController : ControllerBase
         _sender = sender;
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost("create")]
     public async Task<IActionResult> CreateUser([FromQuery] CreateUserRequest createUserRequest)
     {
@@ -27,6 +29,18 @@ public class UserController : ControllerBase
             Password = createUserRequest.Password,
             Fullname = createUserRequest.FullName,
             Address = createUserRequest.Address,
+        });
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete]
+    public async Task<IActionResult> DeleteUser([FromQuery] Guid id)
+    {
+        var result = await _sender.Send(new DeleteUserCommand
+        {
+            UserId = id,
         });
         result.ThrowIfFailure();
         return Ok(result.Value);

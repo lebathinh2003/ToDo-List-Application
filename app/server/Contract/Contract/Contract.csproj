@@ -60,7 +60,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Event\" />
 	  <Folder Include="ValidationAttributes\" />
 	</ItemGroup>
 </Project>

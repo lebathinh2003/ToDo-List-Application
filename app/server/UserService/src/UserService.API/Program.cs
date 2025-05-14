@@ -15,13 +15,15 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+
 //Authentication & Authorization
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
-        options.Authority = "http://localhost:5001";
+        options.Authority = jwtSettings["Issuer"];
         options.RequireHttpsMetadata = false;
-        options.Audience = "http://localhost:5001/resources";
+        options.Audience = jwtSettings["Audience"];
     });
 
 builder.Services.AddAuthorization();

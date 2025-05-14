@@ -28,11 +28,10 @@ builder.WebHost.ConfigureKestrel(options =>
     {
         listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
     });
-
     options.ListenLocalhost(6001, listenOptions =>
     {
         listenOptions.UseHttps();
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+        listenOptions.Protocols = HttpProtocols.Http2;
     });
 });
 
@@ -42,7 +41,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication(); 
 app.UseAuthorization();  
