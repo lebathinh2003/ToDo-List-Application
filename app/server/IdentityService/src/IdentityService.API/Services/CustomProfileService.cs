@@ -18,11 +18,11 @@ public class CustomProfileService : IProfileService
     public async Task GetProfileDataAsync(ProfileDataRequestContext context)
     {
         var user = await _userManager.GetUserAsync(context.Subject);
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _userManager.GetRolesAsync(user!);
 
         var claims = new List<Claim>
         {
-            new Claim("sub", user.Id.ToString()),
+            new Claim("sub", user!.Id.ToString()),
             new Claim("role", string.Join(",", roles)) 
         };
 

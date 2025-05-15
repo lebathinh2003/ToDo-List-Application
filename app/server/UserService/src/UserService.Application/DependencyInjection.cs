@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
+using IdentityProto;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Security;
 using System.Reflection;
-using UserProto;
 using UserService.Application.Configs;
 
 namespace UserService.Application;
@@ -27,7 +28,21 @@ public static class DependencyInjection
 
     private static void AddGrpcClientService(this IServiceCollection services)
     {
-
+        services.AddGrpcClient<GrpcIdentity.GrpcIdentityClient>(options =>
+        {
+            options.Address = new Uri("https://localhost:6001");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            return new SocketsHttpHandler
+            {
+                EnableMultipleHttp2Connections = true,
+                SslOptions = new SslClientAuthenticationOptions
+                {
+                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true
+                }
+            };
+        });
 
     }
 }

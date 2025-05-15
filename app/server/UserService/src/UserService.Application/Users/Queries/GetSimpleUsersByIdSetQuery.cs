@@ -38,7 +38,7 @@ public class GetSimpleUsersByIdSetQueryHandler : IRequestHandler<GetSimpleUsersB
                 Address = user.Address,
                 FullName = user.FullName,
                 IsActive = user.IsActive,
-                IsAdmin = user.IsAdmin,
+                Role = user.IsAdmin ? "Admin" : "Staff",
             }).ToListAsync();
 
         return Result<List<UserDTO>?>.Success(users);

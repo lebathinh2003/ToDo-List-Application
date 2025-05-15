@@ -12,11 +12,22 @@
     <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="7.2.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+	 <!-- Grpc dependencies -->
+	 <PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\IdentityService.Application\IdentityService.Application.csproj" />
     <ProjectReference Include="..\IdentityService.Infrastructure\IdentityService.Infrastructure.csproj" />
     <ProjectReference Include="..\IndentityService.Domain\IndentityService.Domain.csproj" />
   </ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="Contract">
+			<HintPath Condition="Exists('..\..\..\Contract\Contract\bin\Release\net8.0\Contract.dll')">..\..\..\Contract\Contract\bin\Release\net8.0\Contract.dll</HintPath>
+			<HintPath Condition="Exists('..\..\..\Contract\Contract\Published\Contract.dll')">..\..\..\Contract\Contract\Published\Contract.dll</HintPath>
+			<HintPath Condition="Exists('..\Contract\Contract.dll')">..\Contract\Contract.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
 </Project>

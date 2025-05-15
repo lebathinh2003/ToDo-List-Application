@@ -8,7 +8,7 @@ public static class JwtServiceExtensions
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var jwtSettings = configuration.GetSection("Jwt");
-        var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
+        var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
 
         services.AddAuthentication(options =>
         {

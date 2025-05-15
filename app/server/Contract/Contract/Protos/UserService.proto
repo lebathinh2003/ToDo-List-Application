@@ -12,7 +12,7 @@ service GrpcUser {
 message GrpcEmpty {}
 
 message GrpcIdRequest {
-    string AccountId = 1;
+    string Id = 1;
 }
 
 message GrpcIdsSetRequest {

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using IdentityService.Infrastructure;
 using IdentityService.API.Configs;
 using IdentityService.API.Services;
+using IndentityService.Domain.Interfaces;
 namespace IdentityService.API.Extensions;
 
 public static class IdentityServiceExtensions
@@ -13,7 +14,7 @@ public static class IdentityServiceExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
         // Thêm DbContext cho ASP.NET Identity
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
             options.UseSqlServer(connectionString));
 
         // Cấu hình ASP.NET Identity

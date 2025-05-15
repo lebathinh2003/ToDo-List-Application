@@ -41,7 +41,7 @@ public class GrpcUserService : GrpcUser.GrpcUserBase
                 Address = user.Address,
                 FullName = user.FullName,
                 IsActive = user.IsActive,
-                IsAdmin = user.IsAdmin,
+                IsAdmin = user.Role == "Admin",
             });
         }
 

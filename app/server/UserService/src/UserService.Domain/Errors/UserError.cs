@@ -47,4 +47,9 @@ public class UserError
         new("UserError.DeleteUserFail",
             Message: "Delete user fail.",
             StatusCode: (int)HttpStatusCode.InternalServerError);
+
+    public static Error GetUserFail =>
+        new("UserError.GetUserFail",
+            Message: "Get user fail.",
+            StatusCode: (int)HttpStatusCode.InternalServerError);
 }

@@ -17,9 +17,6 @@ namespace TaskService.Application.Tasks.Queries;
 public class GetFullTaskQuery : IRequest<Result<PaginatedGetFullTaskDTO?>>
 {
     [Required]
-    public Guid UserId { get; init; }
-
-    [Required]
     public PaginatedDTO PaginatedDTO { get; init; } = null!;
 }
 
@@ -42,14 +39,12 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
     {
         try
         {
-            var userId = request.UserId;
             var paginatedDTO = request.PaginatedDTO;
 
-            if (userId == Guid.Empty || paginatedDTO.Skip == null)
+            if (paginatedDTO.Skip == null)
             {
-                return Result<PaginatedGetFullTaskDTO?>.Failure(TaskError.NullParameters, "UserId or Skip is null");
+                return Result<PaginatedGetFullTaskDTO?>.Failure(TaskError.NullParameters, "Skip is null");
             }
-            Console.WriteLine("aaaaaaaaaaaaaaaaaaaaaaaaaa");
 
             var taskQuery = _context.Tasks.AsQueryable();
             if (!string.IsNullOrEmpty(paginatedDTO.Keyword))

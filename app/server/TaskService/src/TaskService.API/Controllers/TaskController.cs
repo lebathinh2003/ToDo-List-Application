@@ -40,17 +40,8 @@ public class TasksController : ControllerBase
     [HttpGet("get-tasks")]
     public async Task<IActionResult> AdminGetTasks([FromQuery] PaginatedDTO paginatedDTO)
     {
-        Console.WriteLine("Ok ne 1");
-        var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (string.IsNullOrEmpty(userIdClaim))
-        {
-            return Unauthorized("No 'NameIdentifier' claim found in the token.");
-        }
-
         var result = await _sender.Send(new GetFullTaskQuery
         {
-            UserId = Guid.Parse(userIdClaim!),
             PaginatedDTO = paginatedDTO
         });
         result.ThrowIfFailure();

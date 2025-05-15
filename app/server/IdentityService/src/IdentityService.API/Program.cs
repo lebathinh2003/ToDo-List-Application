@@ -1,6 +1,7 @@
 ﻿using Duende.IdentityServer.Services;
 using IdentityService.API.Extensions;
 using IdentityService.API.Services;
+using IdentityService.Application;
 using IdentityService.Infrastructure;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
@@ -35,6 +36,10 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 });
 
+builder.Services.AddGrpcServices();
+builder.Services.AddApplication();
+
+
 var app = builder.Build();
 
 // Configure middleware
@@ -49,4 +54,6 @@ app.UseAuthorization();
 app.UseIdentityServer();
 
 app.MapControllers();
+
+app.UseGrpcServices();
 app.Run();

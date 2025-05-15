@@ -7,6 +7,6 @@ public class UserDTO
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public bool IsActive { get; set; }
-    public bool IsAdmin { get; set; }
+    public string Role { get; set; } = null!;
 
 }

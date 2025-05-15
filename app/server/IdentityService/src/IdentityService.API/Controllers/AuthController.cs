@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using IndentityService.Domain.Models;
 using IdentityService.API.Request;
 using Duende.IdentityModel.Client;
+using IdentityService.Application.DTOs;
 
 [ApiController]
 [Route("api/auth")]
@@ -48,11 +49,14 @@ public class AuthController : ControllerBase
         if (tokenResponse.IsError)
             return Unauthorized(tokenResponse.Error);
 
-        return Ok(new
-        {
-            access_token = tokenResponse.AccessToken,
-            expires_in = tokenResponse.ExpiresIn
+        return Ok(new LoginResonseDTO {
+            UserId = user.Id,
+            Token = tokenResponse.AccessToken ?? "",
+            Email = user.Email ?? "",
+            Username = user.UserName ?? "",
+            Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault() ?? ""
         });
+
     }
 }
 

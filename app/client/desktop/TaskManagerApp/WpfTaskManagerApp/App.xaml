@@ -1,0 +1,33 @@
+﻿<Application x:Class="WpfTaskManagerApp.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:WpfTaskManagerApp"
+             xmlns:viewModels="clr-namespace:WpfTaskManagerApp.ViewModels"
+             xmlns:views="clr-namespace:WpfTaskManagerApp.Views"
+             xmlns:converters="clr-namespace:WpfTaskManagerApp.Converters">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <converters:MessageToBrushConverter x:Key="MessageToBrushConverter"/>
+            <converters:BooleanToStringConverter x:Key="BooleanToStringConverter"/>
+
+            <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
+                <views:LoginView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModels:ProfileViewModel}">
+                <views:ProfileView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModels:StaffManagementViewModel}">
+                <views:StaffManagementView/>
+            </DataTemplate>
+            <!--<DataTemplate DataType="{x:Type viewModels:TaskManagementViewModel}">
+                <views:TaskManagementView/>
+            </DataTemplate>-->
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
