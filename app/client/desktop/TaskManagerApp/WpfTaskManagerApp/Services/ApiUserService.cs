@@ -10,15 +10,13 @@ namespace WpfTaskManagerApp.Services;
 public class ApiUserService : IUserService
 {
     private readonly HttpClient _httpClient;
-    // ***** THAY IAuthenticationService BẰNG ITokenProvider *****
     private readonly ITokenProvider _tokenProvider;
     private readonly JsonSerializerOptions _jsonSerializerOptions;
 
-    // ***** CẬP NHẬT CONSTRUCTOR *****
     public ApiUserService(HttpClient httpClient, ITokenProvider tokenProvider)
     {
         _httpClient = httpClient;
-        _tokenProvider = tokenProvider; // ***** LƯU TRỮ ITokenProvider *****
+        _tokenProvider = tokenProvider;
         _jsonSerializerOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -28,7 +26,6 @@ public class ApiUserService : IUserService
 
     private async Task SetAuthHeader()
     {
-        // ***** LẤY TOKEN TỪ TOKENPROVIDER *****
         var token = _tokenProvider.GetToken();
         if (!string.IsNullOrEmpty(token))
         {
@@ -47,17 +44,14 @@ public class ApiUserService : IUserService
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
         if (includeInactive) queryParams.Add("includeInactive=true");
-
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
-
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri);
             if (response.IsSuccessStatusCode)
             {
-                var users = await response.Content.ReadFromJsonAsync<List<User>>(_jsonSerializerOptions);
-                return users ?? new List<User>();
+                return await response.Content.ReadFromJsonAsync<List<User>>(_jsonSerializerOptions) ?? new List<User>();
             }
             Debug.WriteLine($"Error fetching users: {response.StatusCode}");
         }
@@ -70,21 +64,34 @@ public class ApiUserService : IUserService
         await SetAuthHeader();
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}?id={userId}");
+            HttpResponseMessage response = await _httpClient.GetAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{userId}");
+            Debug.WriteLine($"ApiUserService.GetUserByIdAsync: User API response status for ID {userId}: {response.StatusCode}");
             if (response.IsSuccessStatusCode)
             {
-                var r = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine("STRINGGGGG:" + r);
-                User? user = await response.Content.ReadFromJsonAsync<User>(_jsonSerializerOptions);
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"ApiUserService.GetUserByIdAsync: User API JSON response for ID {userId}: {jsonResponse}");
+                User? user = JsonSerializer.Deserialize<User>(jsonResponse, _jsonSerializerOptions);
                 if (user != null)
                 {
-                    Debug.WriteLine($"ApiUserService.GetUserByIdAsync: Fetched user {userId}, FullName: '{user.FullName}', Email: '{user.Email}', Role (from User API): {user.Role}");
+                    Debug.WriteLine($"ApiUserService.GetUserByIdAsync: Deserialized user {userId} - FullName: '{user.FullName}', Email: '{user.Email}', Address: '{user.Address}', Username: '{user.Username}', Role (from User API): {user.Role}, IsActive: {user.IsActive}");
+                }
+                else
+                {
+                    Debug.WriteLine($"ApiUserService.GetUserByIdAsync: Deserialization returned null for user {userId}.");
                 }
                 return user;
             }
             Debug.WriteLine($"Error fetching user {userId}: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
         }
-        catch (Exception ex) { Debug.WriteLine($"GetUserByIdAsync error for {userId}: {ex.Message}"); }
+        catch (JsonException jsonEx)
+        {
+            Debug.WriteLine($"ApiUserService.GetUserByIdAsync JSON deserialization error for {userId}: {jsonEx.Message}");
+            Debug.WriteLine($"Path: {jsonEx.Path}, LineNumber: {jsonEx.LineNumber}, BytePositionInLine: {jsonEx.BytePositionInLine}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"GetUserByIdAsync error for {userId}: {ex.Message}");
+        }
         return null;
     }
 
@@ -103,8 +110,6 @@ public class ApiUserService : IUserService
         catch (Exception ex) { Debug.WriteLine($"GetUserByUsernameAsync error: {ex.Message}"); }
         return null;
     }
-
-
     public async Task<User?> AddUserAsync(User user, string password)
     {
         await SetAuthHeader();
@@ -130,7 +135,6 @@ public class ApiUserService : IUserService
         catch (Exception ex) { Debug.WriteLine($"AddUserAsync error: {ex.Message}"); }
         return null;
     }
-
     public async Task<bool> UpdateUserAsync(User user)
     {
         await SetAuthHeader();
@@ -145,13 +149,12 @@ public class ApiUserService : IUserService
         };
         try
         {
-            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/{user.Id}", updateUserRequest, _jsonSerializerOptions);
+            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{user.Id}", updateUserRequest, _jsonSerializerOptions);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex) { Debug.WriteLine($"UpdateUserAsync error: {ex.Message}"); }
         return false;
     }
-
     public async Task<bool> DeleteUserAsync(Guid userId)
     {
         await SetAuthHeader();
@@ -161,18 +164,6 @@ public class ApiUserService : IUserService
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex) { Debug.WriteLine($"DeleteUserAsync error: {ex.Message}"); }
-        return false;
-    }
-
-    public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordModel changePasswordModel)
-    {
-        await SetAuthHeader();
-        try
-        {
-            HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/{userId}/change-password", changePasswordModel, _jsonSerializerOptions);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex) { Debug.WriteLine($"ChangePasswordAsync error: {ex.Message}"); }
         return false;
     }
 }

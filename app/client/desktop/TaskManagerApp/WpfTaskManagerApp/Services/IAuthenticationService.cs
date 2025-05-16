@@ -6,4 +6,5 @@ public interface IAuthenticationService
     Task LogoutAsync();
     User? CurrentUser { get; }
     Task<bool> IsUserAuthenticatedAsync();
+    Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordModel changePasswordModel);
 }

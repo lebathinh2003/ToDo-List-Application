@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows.Input;
+using WpfTaskManagerApp.Core;
 using WpfTaskManagerApp.Models;
 using WpfTaskManagerApp.Services;
 using WpfTaskManagerApp.ViewModels.Common;
@@ -8,6 +9,7 @@ namespace WpfTaskManagerApp.ViewModels;
 public class LoginViewModel : ViewModelBase
 {
     private readonly IAuthenticationService? _authenticationService;
+    private readonly ToastNotificationViewModel? _toastViewModel;
 
     private string _username = string.Empty;
     public string Username
@@ -40,44 +42,36 @@ public class LoginViewModel : ViewModelBase
     public ICommand LoginCommand { get; }
     public Action<User>? LoginSuccessAction { get; set; }
 
-    public LoginViewModel()
+    public LoginViewModel() // Constructor cho Design-Time
     {
         _authenticationService = null;
+        _toastViewModel = null;
         LoginCommand = new RelayCommand(
             async (_) => await Task.CompletedTask,
-            (_) =>
-            {
-                bool canLoginDesignTime = !IsLoggingIn &&
-                               !string.IsNullOrWhiteSpace(Username) &&
-                               !string.IsNullOrWhiteSpace(Password) &&
-                               _authenticationService != null;
-                return canLoginDesignTime;
-            }
+            (_) => CanLogin() // Gọi CanLogin() cho design-time
         );
 
         if (IsInDesignModeStatic())
         {
             Username = "designer";
             Password = "password";
-            ErrorMessage = "This is a design-time error message.";
-            IsLoggingIn = false;
+            // ValidateAllProperties(); // Không gọi ở đây nữa
         }
     }
 
-    public LoginViewModel(IAuthenticationService authenticationService, INavigationService navigationService)
+    public LoginViewModel(IAuthenticationService authenticationService,
+                          ToastNotificationViewModel toastViewModel,
+                          INavigationService navigationService)
     {
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+        _toastViewModel = toastViewModel ?? throw new ArgumentNullException(nameof(toastViewModel));
 
         LoginCommand = new RelayCommand(
             async (_) => await LoginAsync(),
-            (_) =>
-            {
-                bool canLoginRuntime = !IsLoggingIn &&
-                               !string.IsNullOrWhiteSpace(Username) &&
-                               !string.IsNullOrWhiteSpace(Password);
-                return canLoginRuntime;
-            }
+            (_) => CanLogin() // CanExecute sẽ dựa vào !HasErrors và !IsLoggingIn
         );
+        // ValidateAllProperties(); // ***** KHÔNG GỌI ValidateAllProperties TRONG CONSTRUCTOR RUNTIME NỮA *****
+        // Validation sẽ xảy ra khi người dùng nhập liệu
     }
 
     private static bool IsInDesignModeStatic()
@@ -85,18 +79,59 @@ public class LoginViewModel : ViewModelBase
         return System.ComponentModel.LicenseManager.UsageMode == System.ComponentModel.LicenseUsageMode.Designtime;
     }
 
+    protected override void ValidateProperty(string? propertyName)
+    {
+        base.ValidateProperty(propertyName);
+        ClearErrors(propertyName);
+
+        switch (propertyName)
+        {
+            case nameof(Username):
+                if (string.IsNullOrWhiteSpace(Username))
+                {
+                    AddError(nameof(Username), "Username is required.");
+                }
+                break;
+            case nameof(Password):
+                if (string.IsNullOrWhiteSpace(Password))
+                {
+                    AddError(nameof(Password), "Password is required.");
+                }
+                break;
+        }
+        (LoginCommand as RelayCommand)?.RaiseCanExecuteChanged();
+    }
+
+    protected override void ValidateAllProperties()
+    {
+        base.ValidateAllProperties();
+        // Gọi ValidateProperty cho từng trường để đảm bảo tất cả lỗi được cập nhật
+        ValidateProperty(nameof(Username));
+        ValidateProperty(nameof(Password));
+    }
+
+    private bool CanLogin()
+    {
+        // Nút Login sẽ enable nếu không có lỗi validation và không đang trong quá trình login
+        // HasErrors sẽ được cập nhật bởi ValidateProperty khi người dùng gõ
+        return !HasErrors && !IsLoggingIn;
+    }
 
     private async Task LoginAsync()
     {
-        if (_authenticationService == null)
+        // Validate lại tất cả các trường trước khi thực hiện hành động submit
+        ValidateAllProperties();
+        if (HasErrors) // Nếu vẫn còn lỗi sau khi validate tất cả
         {
-            ErrorMessage = "Authentication service is not available.";
+            // Lấy lỗi đầu tiên để hiển thị hoặc một thông báo chung
+            var firstError = GetErrors(null)?.Cast<string>().FirstOrDefault();
+            _toastViewModel?.Show(firstError ?? "Please correct the validation errors.", ToastType.Warning);
             return;
         }
-        if (string.IsNullOrEmpty(Password))
+
+        if (_authenticationService == null || _toastViewModel == null)
         {
-            ErrorMessage = "Password is required.";
-            (LoginCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            _toastViewModel?.Show("Core services are not available.", ToastType.Error);
             return;
         }
 
@@ -104,38 +139,26 @@ public class LoginViewModel : ViewModelBase
         ErrorMessage = null;
         try
         {
-            Debug.WriteLine("LoginViewModel.LoginAsync: Attempting to login with API...");
             var user = await _authenticationService.LoginAsync(Username, this.Password);
-            Debug.WriteLine($"LoginViewModel.LoginAsync: API call returned. User IsNull? {user == null}");
             if (user != null)
             {
-                Debug.WriteLine($"LoginViewModel.LoginAsync: Login successful. User: {user.Username}. Checking if LoginSuccessAction is null: {LoginSuccessAction == null}");
-                if (LoginSuccessAction != null)
-                {
-                    Debug.WriteLine($"LoginViewModel.LoginAsync: LoginSuccessAction Target: {LoginSuccessAction.Target?.GetType().FullName}, Method: {LoginSuccessAction.Method.Name}. Invoking...");
-                    LoginSuccessAction.Invoke(user);
-                    Debug.WriteLine("LoginViewModel.LoginAsync: LoginSuccessAction invoked.");
-                }
-                else
-                {
-                    Debug.WriteLine("LoginViewModel.LoginAsync: LoginSuccessAction IS NULL. Cannot invoke.");
-                }
+                _toastViewModel.Show("Login successful!", ToastType.Success);
+                LoginSuccessAction?.Invoke(user);
             }
             else
             {
-                ErrorMessage = "Invalid username or password, or API error.";
-                Debug.WriteLine("LoginViewModel.LoginAsync: Login failed (user is null).");
+                // ErrorMessage = "Invalid username or password, or API error.";
+                _toastViewModel.Show("Invalid username or password, or API error.", ToastType.Error);
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LoginViewModel.LoginAsync: Login failed with exception: {ex}");
-            ErrorMessage = $"An error occurred during login. Please try again.";
+            // ErrorMessage = $"An error occurred during login. Please try again.";
+            _toastViewModel.Show($"An error occurred during login. Please try again.", ToastType.Error);
         }
         finally
         {
             IsLoggingIn = false;
-            Debug.WriteLine("LoginViewModel.LoginAsync: IsLoggingIn set to false.");
         }
     }
 }

@@ -41,7 +41,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
+        
         <Style TargetType="Button" x:Key="SecondaryActionButtonStyle" BasedOn="{StaticResource ActionButtonStyle}">
             <Setter Property="Background" Value="#6c757d"/>
             <Style.Triggers>
@@ -75,14 +75,14 @@
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="CanUserDeleteRows" Value="False"/>
-            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="IsReadOnly" Value="True"/> 
             <Setter Property="SelectionMode" Value="Single"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#DDDDDD"/>
             <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="RowHeaderWidth" Value="0"/> 
             <Setter Property="AlternatingRowBackground" Value="#F9F9F9"/>
         </Style>
 
@@ -118,15 +118,15 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
-    </UserControl.Resources>
+        
+        </UserControl.Resources>
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> 
+            <RowDefinition Height="Auto"/> 
+            <RowDefinition Height="*"/>    
+            <RowDefinition Height="Auto"/> 
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Staff Management" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20" Foreground="#333"/>
@@ -138,13 +138,13 @@
                     DockPanel.Dock="Right" 
                     HorizontalAlignment="Right"
                     IsEnabled="{Binding AddStaffCommand.CanExecute}"/>
-
+            
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}" 
                          Style="{StaticResource SearchTextBoxStyle}"
                          MinWidth="250"/>
-            </StackPanel>
+                </StackPanel>
         </DockPanel>
 
         <DataGrid Grid.Row="2" 
@@ -154,13 +154,12 @@
                   HeadersVisibility="Column"
                   IsReadOnly="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="150"/>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto" MinWidth="250"/> <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="150"/>
                 <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="2*"/>
                 <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="100"/>
                 <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="70"/>
-
+                
                 <DataGridTemplateColumn Header="Actions" Width="Auto" MinWidth="130">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -177,14 +176,14 @@
                                         Margin="2" Padding="8,3" FontSize="12" MinWidth="50">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
-                                            <Setter Property="Background" Value="#E53935"/>
+                                            <Setter Property="Background" Value="#E53935"/> 
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter Property="Background" Value="#C62828"/>
                                                 </Trigger>
                                                 <Trigger Property="IsEnabled" Value="False">
                                                     <Setter Property="Opacity" Value="0.5"/>
-                                                    <Setter Property="Background" Value="#EF9A9A"/>
+                                                    <Setter Property="Background" Value="#EF9A9A"/> 
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -213,7 +212,7 @@
                     Style="{StaticResource SecondaryActionButtonStyle}"
                     IsEnabled="{Binding NextPageCommand.CanExecute}"/>
         </StackPanel>
-
+        
         <ProgressBar Grid.Row="1" Grid.RowSpan="3" IsIndeterminate="True" Height="5" VerticalAlignment="Top" Margin="0,5,0,0"
                      Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
 

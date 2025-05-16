@@ -1,4 +1,5 @@
-﻿using Duende.IdentityServer.Services;
+﻿using Contract.Extension;
+using Duende.IdentityServer.Services;
 using IdentityService.API.Extensions;
 using IdentityService.API.Services;
 using IdentityService.Application;
@@ -15,14 +16,16 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // For HttpClientFactory
 builder.Services.AddHttpClient();
 
-//Jwt authentication
-builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//builder.WebHost.UseUrls($"http://*:5001");
+builder.Services.AddHttpContextAccessor();
+
+// Jwt authentication
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddAuthorization();
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenLocalhost(5001, listenOptions =>
@@ -39,21 +42,23 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddGrpcServices();
 builder.Services.AddApplication();
 
-
 var app = builder.Build();
+app.UseCommonServices();
 
-// Configure middleware
-app.UseSwagger();
-app.UseSwaggerUI();
-
-//app.UseHttpsRedirection();
-
-app.UseAuthentication(); 
-app.UseAuthorization();  
+// Middleware configuration
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseIdentityServer();
 
-app.MapControllers();
+app.UseAuthentication();     // After UseRouting
+app.UseAuthorization();
+
+app.MapControllers();        // Top-level route registration
 
 app.UseGrpcServices();
+
 app.Run();

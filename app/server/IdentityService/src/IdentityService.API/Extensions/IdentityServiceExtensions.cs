@@ -32,6 +32,16 @@ public static class IdentityServiceExtensions
         .AddAspNetIdentity<ApplicationUser>()
         .AddProfileService<CustomProfileService>()
         .AddDeveloperSigningCredential();
+
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Events.OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            };
+        });
+
         return services;
     }
 

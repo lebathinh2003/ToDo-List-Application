@@ -20,7 +20,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpPost("create")]
+    [HttpPost]
     public async Task<IActionResult> CreateUser([FromQuery] CreateUserRequest createUserRequest)
     {
         var result = await _sender.Send(new CreateUserCommand
@@ -36,8 +36,8 @@ public class UserController : ControllerBase
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpDelete]
-    public async Task<IActionResult> DeleteUser([FromQuery] Guid id)
+    [HttpDelete("id/{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _sender.Send(new DeleteUserCommand
         {
@@ -47,9 +47,15 @@ public class UserController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetUserById([FromQuery] Guid id)
+    [Authorize]
+    [HttpGet("id/{id}")]
+    public async Task<IActionResult> GetUserById(Guid id)
     {
+        foreach(var claim in HttpContext.User.Claims)
+        {
+            Console.WriteLine($"{claim.Type}: {claim.Value}");
+        }
+
         var result = await _sender.Send(new GetUserByIdQuery
         {
             Id = id,
@@ -59,13 +65,36 @@ public class UserController : ControllerBase
     }
 
     //[Authorize(Roles = "Admin")]
-    [HttpGet("get-users")]
+    [HttpGet]
     public async Task<IActionResult> AdminGetUsers([FromQuery] PaginatedDTO paginatedDTO)
     {
         var result = await _sender.Send(new GetFullUserQuery
         {
             PaginatedDTO = paginatedDTO
         });
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [HttpPut("id/{id}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateUser(Guid id , [FromBody] UpdateUserRequest updateUserRequest)
+    {
+
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Id is null.");
+        }
+
+        var result = await _sender.Send(new UpdateUserCommand
+        {
+            Id = id,
+            Address = updateUserRequest.Address,
+            Fullname = updateUserRequest.FullName,
+            Email = updateUserRequest.Email,
+            IsActive = null,
+        });
+        
         result.ThrowIfFailure();
         return Ok(result.Value);
     }

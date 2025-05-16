@@ -7,6 +7,7 @@ package IdentityProto;
 service GrpcIdentity {
     rpc GetAccountDetail (GrpcIdRequest) returns (GrpcAccountDetailDTO);
     rpc GetSimpleAccounts (GrpcIdsSetRequest) returns (GrpcListSimpleAccountsDTO);
+    rpc UpdateAccount (GrpcUpdateAccountRequest) returns (GrpcStatusResponse);
 }
 
 message GrpcEmpty {}
@@ -17,6 +18,12 @@ message GrpcIdRequest {
 
 message GrpcIdsSetRequest {
     repeated string Ids = 1; // HashSet<Guid> represented as repeated strings
+}
+
+message GrpcUpdateAccountRequest {
+    string Id = 1;
+    string Email = 2;
+    string IsActive = 3;
 }
 
 message GrpcSimpleAccountDTO {
@@ -35,4 +42,8 @@ message GrpcAccountDetailDTO {
 
 message GrpcListSimpleAccountsDTO {
     map<string, GrpcSimpleAccountDTO> Accounts = 1; // Dictionary <=> MapField
+}
+
+message GrpcStatusResponse{
+    bool IsSuccess = 1;
 }

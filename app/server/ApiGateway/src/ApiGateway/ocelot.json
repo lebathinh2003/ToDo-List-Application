@@ -1,6 +1,37 @@
 {
     "Routes": [
         {
+            "DownstreamPathTemplate": "/api/auth/login",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 5001
+                }
+            ],
+            "UpstreamPathTemplate": "/auth/login",
+            "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/auth/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 5001
+                }
+            ],
+            "UpstreamPathTemplate": "/auth/{everything}",
+            "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer",
+                "AllowedScopes": []
+            },
+            "AddHeadersToRequest": {
+                "Authorization": "Bearer {Token}"
+            }
+        },
+        {
             "DownstreamPathTemplate": "/api/identity/{everything}",
             "DownstreamScheme": "http",
             "DownstreamHostAndPorts": [
@@ -14,6 +45,9 @@
             "AuthenticationOptions": {
                 "AuthenticationProviderKey": "Bearer",
                 "AllowedScopes": []
+            },
+            "AddHeadersToRequest": {
+                "Authorization": "Bearer {Token}"
             }
         },
         {
@@ -30,6 +64,9 @@
             "AuthenticationOptions": {
                 "AuthenticationProviderKey": "Bearer",
                 "AllowedScopes": []
+            },
+            "AddHeadersToRequest": {
+                "Authorization": "Bearer {Token}"
             }
         },
         {
@@ -46,20 +83,10 @@
             "AuthenticationOptions": {
                 "AuthenticationProviderKey": "Bearer",
                 "AllowedScopes": []
+            },
+            "AddHeadersToRequest": {
+                "Authorization": "Bearer {Token}"
             }
-        },
-        {
-            "DownstreamPathTemplate": "/api/auth/login",
-            "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [
-                {
-                    "Host": "localhost",
-                    "Port": 5001
-                }
-            ],
-            "UpstreamPathTemplate": "/auth/login",
-            "UpstreamHttpMethod": [ "POST" ]
-            // Không cần cấu hình AuthenticationOptions cho route này
         },
         {
             "DownstreamPathTemplate": "/.well-known/openid-configuration",
@@ -71,13 +98,8 @@
                 }
             ],
             "UpstreamPathTemplate": "/.well-known/openid-configuration",
-            "UpstreamHttpMethod": [ "GET" ],
-            "AuthenticationOptions": {
-                "AuthenticationProviderKey": "",
-                "AllowedScopes": []
-            }
+            "UpstreamHttpMethod": [ "GET" ]
         }
-
     ],
     "GlobalConfiguration": {
         "BaseUrl": "http://localhost:5000"

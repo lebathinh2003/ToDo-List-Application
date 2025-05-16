@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf.Collections;
 using Grpc.Core;
 using IdentityProto;
+using IdentityService.Application.ApplicationUsers.Commands;
 using IdentityService.Application.ApplicationUsers.Queries;
 using MediatR;
 namespace IdentityService.API.GrpcServices;
@@ -69,6 +70,27 @@ public class GrpcIdentityService : GrpcIdentity.GrpcIdentityBase
             Email = response.Value.Email ?? "",
             Username = response.Value.Username ?? "",
             Role = response.Value.Role ?? "",
+        };
+    }
+
+    public override async Task<GrpcStatusResponse> UpdateAccount(GrpcUpdateAccountRequest request, ServerCallContext context)
+    {
+        if (string.IsNullOrEmpty(request.Id))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Id must not be null or empty."));
+        }
+
+        var response = await _sender.Send(new UpdateAccountCommand
+        {
+            Id = Guid.Parse(request.Id),
+            Email = request.Email,
+            IsActive = request.IsActive,
+        });
+        response.ThrowIfFailure();
+
+        return new GrpcStatusResponse
+        {
+            IsSuccess = response.IsSuccess,
         };
     }
 }

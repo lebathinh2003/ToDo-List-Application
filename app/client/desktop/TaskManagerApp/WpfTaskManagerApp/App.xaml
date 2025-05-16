@@ -4,7 +4,8 @@
              xmlns:local="clr-namespace:WpfTaskManagerApp"
              xmlns:viewModels="clr-namespace:WpfTaskManagerApp.ViewModels"
              xmlns:views="clr-namespace:WpfTaskManagerApp.Views"
-             xmlns:converters="clr-namespace:WpfTaskManagerApp.Converters">
+             xmlns:converters="clr-namespace:WpfTaskManagerApp.Converters"
+             xmlns:helpers="clr-namespace:WpfTaskManagerApp.Helpers">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -27,6 +28,15 @@
             <!--<DataTemplate DataType="{x:Type viewModels:TaskManagementViewModel}">
                 <views:TaskManagementView/>
             </DataTemplate>-->
+
+            <ControlTemplate x:Key="GlobalValidationErrorTemplate">
+                <StackPanel>
+                    <AdornedElementPlaceholder x:Name="textBox"/>
+                    <TextBlock Text="{Binding ElementName=textBox, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}" 
+                               Foreground="#EF4444" FontSize="11" Margin="0,2,0,2"
+                               Visibility="{Binding ElementName=textBox, Path=AdornedElement.(Validation.HasError), Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+            </ControlTemplate>
 
         </ResourceDictionary>
     </Application.Resources>

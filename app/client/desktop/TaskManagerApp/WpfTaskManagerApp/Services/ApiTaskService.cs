@@ -12,15 +12,13 @@ namespace WpfTaskManagerApp.Services;
 public class ApiTaskService : ITaskService
 {
     private readonly HttpClient _httpClient;
-    // ***** THAY IAuthenticationService BẰNG ITokenProvider *****
     private readonly ITokenProvider _tokenProvider;
     private readonly JsonSerializerOptions _jsonSerializerOptions;
 
-    // ***** CẬP NHẬT CONSTRUCTOR *****
     public ApiTaskService(HttpClient httpClient, ITokenProvider tokenProvider)
     {
         _httpClient = httpClient;
-        _tokenProvider = tokenProvider; // ***** LƯU TRỮ ITokenProvider *****
+        _tokenProvider = tokenProvider;
         _jsonSerializerOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -30,7 +28,6 @@ public class ApiTaskService : ITaskService
 
     private async Task SetAuthHeader()
     {
-        // ***** LẤY TOKEN TỪ TOKENPROVIDER *****
         var token = _tokenProvider.GetToken();
         if (!string.IsNullOrEmpty(token))
         {
@@ -48,21 +45,17 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
-        if (status.HasValue) queryParams.Add($"status={status.Value}");
+        if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}"); // Ensure enum is string
         if (includeInactive) queryParams.Add("includeInactive=true");
-
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
-
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri);
             if (response.IsSuccessStatusCode)
             {
-                var tasks = await response.Content.ReadFromJsonAsync<List<TaskItem>>(_jsonSerializerOptions);
-                return tasks ?? new List<TaskItem>();
+                return await response.Content.ReadFromJsonAsync<List<TaskItem>>(_jsonSerializerOptions) ?? new List<TaskItem>();
             }
-            Debug.WriteLine($"Error fetching all tasks: {response.StatusCode}");
         }
         catch (Exception ex) { Debug.WriteLine($"GetAllTasksAsync error: {ex.Message}"); }
         return new List<TaskItem>();
@@ -73,21 +66,17 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
-        if (status.HasValue) queryParams.Add($"status={status.Value}");
+        if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}");
         if (includeInactive) queryParams.Add("includeInactive=true");
-
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/assignee/{assigneeId}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
-
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri);
             if (response.IsSuccessStatusCode)
             {
-                var tasks = await response.Content.ReadFromJsonAsync<List<TaskItem>>(_jsonSerializerOptions);
-                return tasks ?? new List<TaskItem>();
+                return await response.Content.ReadFromJsonAsync<List<TaskItem>>(_jsonSerializerOptions) ?? new List<TaskItem>();
             }
-            Debug.WriteLine($"Error fetching tasks for assignee {assigneeId}: {response.StatusCode}");
         }
         catch (Exception ex) { Debug.WriteLine($"GetTasksByAssigneeAsync error: {ex.Message}"); }
         return new List<TaskItem>();
@@ -103,7 +92,6 @@ public class ApiTaskService : ITaskService
             {
                 return await response.Content.ReadFromJsonAsync<TaskItem>(_jsonSerializerOptions);
             }
-            Debug.WriteLine($"Error fetching task {taskId}: {response.StatusCode}");
         }
         catch (Exception ex) { Debug.WriteLine($"GetTaskByIdAsync error: {ex.Message}"); }
         return null;
@@ -114,13 +102,13 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var taskToAdd = new { task.Title, task.Description, task.AssigneeId, task.Status, task.IsActive, task.DueDate };
+            // Đảm bảo AssigneeId là Guid? và các trường khác đúng kiểu
+            var taskToAdd = new { task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}", taskToAdd, _jsonSerializerOptions);
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<TaskItem>(_jsonSerializerOptions);
             }
-            Debug.WriteLine($"Error adding task: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex) { Debug.WriteLine($"AddTaskAsync error: {ex.Message}"); }
         return null;
@@ -131,7 +119,7 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var taskToUpdate = new { task.Title, task.Description, task.AssigneeId, task.Status, task.IsActive, task.DueDate };
+            var taskToUpdate = new { task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
             HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/{task.Id}", taskToUpdate, _jsonSerializerOptions);
             return response.IsSuccessStatusCode;
         }
@@ -156,7 +144,7 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var statusUpdate = new { Status = newStatus };
+            var statusUpdate = new { Status = newStatus.ToString() }; // Gửi enum dưới dạng string
             HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/{taskId}/status", statusUpdate, _jsonSerializerOptions);
             return response.IsSuccessStatusCode;
         }

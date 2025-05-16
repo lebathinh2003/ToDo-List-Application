@@ -4,22 +4,56 @@ using IndentityService.Domain.Models;
 using IdentityService.API.Request;
 using Duende.IdentityModel.Client;
 using IdentityService.Application.DTOs;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/auth")]
+[Authorize(AuthenticationSchemes = "Bearer")]
 public class AuthController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ISender _sender;
 
-    public AuthController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory)
+    public AuthController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, ISender sender)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _httpClientFactory = httpClientFactory;
+        _sender = sender;
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("Not found id from token");
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return Unauthorized("User not found");
+
+        var isValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
+        if (!isValid)
+            return BadRequest("Old password is incorrect");
+
+        // Đổi mật khẩu
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok("Password changed successfully");
+    }
+
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {

@@ -9,16 +9,24 @@
              xmlns:helpers="clr-namespace:WpfTaskManagerApp.Helpers"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewModels:ProfileViewModel, IsDesignTimeCreatable=True}"
-             d:DesignHeight="700" d:DesignWidth="800"
-             Background="#F7F7F7">
+             d:DesignHeight="700" d:DesignWidth="1100" Background="#F7F7F7">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
             </ResourceDictionary.MergedDictionaries>
 
+            <ControlTemplate x:Key="ValidationErrorTemplate">
+                <StackPanel>
+                    <AdornedElementPlaceholder x:Name="textBox"/>
+                    <TextBlock Text="{Binding ElementName=textBox, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}" 
+                               Foreground="Red" FontSize="11" Margin="0,2,0,2"
+                               Visibility="{Binding ElementName=textBox, Path=AdornedElement.(Validation.HasError), Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+            </ControlTemplate>
+
             <Style TargetType="GroupBox">
                 <Setter Property="Padding" Value="20"/>
-                <Setter Property="Margin" Value="0,0,0,25"/>
+                <Setter Property="Margin" Value="0,0,0,20"/>
                 <Setter Property="BorderBrush" Value="#E0E0E0"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Background" Value="White"/>
@@ -41,7 +49,8 @@
                                             Padding="15,10" 
                                             Background="#F0F2F5" 
                                             CornerRadius="8,8,0,0">
-                                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                          TextBlock.FontWeight="SemiBold" TextBlock.FontSize="16" TextBlock.Foreground="#2B6CB0"/>
                                     </Border>
                                     <ContentPresenter Grid.Row="1" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                                 </Grid>
@@ -78,7 +87,7 @@
                 <Setter Property="Padding" Value="10,7"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="BorderBrush" Value="#CBD5E0"/>
-                <Setter Property="Margin" Value="0,0,0,15"/>
+                <Setter Property="Margin" Value="0,0,0,5"/>
                 <Setter Property="MinWidth" Value="250"/>
                 <Setter Property="Height" Value="38"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -104,6 +113,10 @@
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
+                                <Trigger Property="Validation.HasError" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="Red"/>
+                                    <Setter TargetName="border" Property="BorderThickness" Value="1.5"/>
+                                </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
@@ -115,7 +128,7 @@
                 <Setter Property="Padding" Value="10,7"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="BorderBrush" Value="#CBD5E0"/>
-                <Setter Property="Margin" Value="0,0,0,15"/>
+                <Setter Property="Margin" Value="0,0,0,5"/>
                 <Setter Property="MinWidth" Value="250"/>
                 <Setter Property="Height" Value="38"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -141,11 +154,16 @@
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
+                                <Trigger Property="Validation.HasError" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="Red"/>
+                                    <Setter TargetName="border" Property="BorderThickness" Value="1.5"/>
+                                </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
             </Style>
+
             <Style TargetType="Button" x:Key="PrimaryButtonStyle">
                 <Setter Property="Background" Value="#3182CE"/>
                 <Setter Property="Foreground" Value="White"/>
@@ -198,71 +216,95 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="10">
-        <StackPanel MaxWidth="700" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="20">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10">
             <TextBlock Text="My Profile" FontSize="28" FontWeight="Bold" HorizontalAlignment="Left" Margin="0,0,0,25" Foreground="#1A202C"/>
 
-            <GroupBox Header="Account Information" FontWeight="Medium" FontSize="16" Foreground="#2B6CB0">
-                <StackPanel>
-                    <TextBlock Text="Username" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Text="{Binding Username}" Style="{StaticResource ReadOnlyValueStyle}" Margin="0,0,0,15"/>
-                    <TextBlock Text="Full Name" Style="{StaticResource LabelStyle}"/>
-                    <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputTextBoxStyle}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Email" Style="{StaticResource LabelStyle}"/>
-                    <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputTextBoxStyle}"/>
+                <GroupBox Grid.Column="0" Header="Account Information" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Username" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Text="{Binding Username}" Style="{StaticResource ReadOnlyValueStyle}" Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Address" Style="{StaticResource LabelStyle}"/>
-                    <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" Style="{StaticResource InputTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" Height="Auto"/>
+                        <TextBlock Text="Full Name" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
+                                 Style="{StaticResource InputTextBoxStyle}"
+                                 Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                 Margin="0,0,0,15"/>
 
-                    <Button Content="Update Profile" 
-                            Command="{Binding UpdateProfileCommand}" 
-                            Style="{StaticResource PrimaryButtonStyle}" 
-                            HorizontalAlignment="Left" Margin="0,10,0,0"
-                            IsEnabled="{Binding UpdateProfileCommand.CanExecute}"/>
-                </StackPanel>
-            </GroupBox>
+                        <TextBlock Text="Email" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
+                                 Style="{StaticResource InputTextBoxStyle}"
+                                 Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                 Margin="0,0,0,15"/>
 
-            <GroupBox Header="Security" FontWeight="Medium" FontSize="16" Foreground="#2B6CB0">
-                <StackPanel>
-                    <Button Content="{Binding IsPasswordChangeVisible, Converter={StaticResource BooleanToStringConverter}, ConverterParameter='Hide Password Section|Change Password'}" 
-                            Command="{Binding ShowChangePasswordCommand}" 
-                            Style="{StaticResource SecondaryButtonStyle}" 
-                            HorizontalAlignment="Left" Margin="0,0,0,20" MinWidth="190"/>
+                        <TextBlock Text="Address" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, TargetNullValue='', ValidatesOnNotifyDataErrors=True}" 
+                                 Style="{StaticResource InputTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" Height="Auto"
+                                 Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                 Margin="0,0,0,15"/>
 
-                    <Border Background="#FFFFFF" CornerRadius="5" Padding="20" 
-                            BorderThickness="1" BorderBrush="#E2E8F0"
-                            Visibility="{Binding IsPasswordChangeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                            Margin="0,0,0,0">
-                        <StackPanel>
-                            <TextBlock Text="Current Password:" Style="{StaticResource LabelStyle}"/>
-                            <PasswordBox Style="{StaticResource InputPasswordBoxStyle}"
-                                         helpers:PasswordHelper.Password="{Binding CurrentPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Content="Update Profile" 
+                                Command="{Binding UpdateProfileCommand}" 
+                                Style="{StaticResource PrimaryButtonStyle}" 
+                                HorizontalAlignment="Left" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </GroupBox>
 
-                            <TextBlock Text="New Password:" Style="{StaticResource LabelStyle}"/>
-                            <PasswordBox Style="{StaticResource InputPasswordBoxStyle}"
-                                         helpers:PasswordHelper.Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <GroupBox Grid.Column="2" Header="Security" VerticalAlignment="Top">
+                    <StackPanel>
+                        <Button Content="{Binding IsPasswordChangeVisible, Converter={StaticResource BooleanToStringConverter}, ConverterParameter='Hide Password Section|Change Password'}" 
+                                Command="{Binding ShowChangePasswordCommand}" 
+                                Style="{StaticResource SecondaryButtonStyle}" 
+                                HorizontalAlignment="Left" Margin="0,0,0,20" MinWidth="190"/>
 
-                            <TextBlock Text="Confirm New Password:" Style="{StaticResource LabelStyle}"/>
-                            <PasswordBox Style="{StaticResource InputPasswordBoxStyle}"
-                                         helpers:PasswordHelper.Password="{Binding ConfirmNewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Border Background="#FFFFFF" CornerRadius="5" Padding="20" 
+                                BorderThickness="1" BorderBrush="#E2E8F0"
+                                Visibility="{Binding IsPasswordChangeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Margin="0,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Current Password:" Style="{StaticResource LabelStyle}"/>
+                                <PasswordBox Style="{StaticResource InputPasswordBoxStyle}"
+                                             helpers:PasswordHelper.Password="{Binding CurrentPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             helpers:PasswordHelper.AttachBehavior="True"
+                                             Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                             Margin="0,0,0,15"/>
 
-                            <Button Content="Save New Password" 
-                                    Command="{Binding ChangePasswordCommand}" 
-                                    Style="{StaticResource PrimaryButtonStyle}" 
-                                    HorizontalAlignment="Left" Margin="0,10,0,0"
-                                    IsEnabled="{Binding ChangePasswordCommand.CanExecute}"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </GroupBox>
+                                <TextBlock Text="New Password:" Style="{StaticResource LabelStyle}"/>
+                                <PasswordBox Style="{StaticResource InputPasswordBoxStyle}"
+                                             helpers:PasswordHelper.Password="{Binding NewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             helpers:PasswordHelper.AttachBehavior="True"
+                                             Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                             Margin="0,0,0,15"/>
 
-            <TextBlock Text="{Binding Message}" 
+                                <TextBlock Text="Confirm New Password:" Style="{StaticResource LabelStyle}"/>
+                                <PasswordBox Style="{StaticResource InputPasswordBoxStyle}"
+                                             helpers:PasswordHelper.Password="{Binding ConfirmNewPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             helpers:PasswordHelper.AttachBehavior="True"
+                                             Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                             Margin="0,0,0,20"/>
+
+                                <Button Content="Save New Password" 
+                                        Command="{Binding ChangePasswordCommand}" 
+                                        Style="{StaticResource PrimaryButtonStyle}" 
+                                        HorizontalAlignment="Left" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </GroupBox>
+            </Grid>
+            <TextBlock Text="{Binding MessageFromToast, FallbackValue=''}" 
                        Style="{StaticResource MessageTextStyle}"
-                       Foreground="{Binding Message, Converter={StaticResource MessageToBrushConverter}, FallbackValue=Red}"
-                       Visibility="{Binding Message, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}"/>
-
-            <ProgressBar IsIndeterminate="True" Height="3" Margin="0,10,0,0" BorderThickness="0"
+                       Foreground="{Binding MessageFromToast, Converter={StaticResource MessageToBrushConverter}, FallbackValue=Red}"
+                       Visibility="{Binding MessageFromToast, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}"
+                       Margin="0,20,0,5"/>
+            <ProgressBar IsIndeterminate="True" Height="3" Margin="0,5,0,0" BorderThickness="0"
                          Visibility="{Binding IsUpdatingProfile, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
             <ProgressBar IsIndeterminate="True" Height="3" Margin="0,5,0,0" BorderThickness="0"
                          Visibility="{Binding IsChangingPassword, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>

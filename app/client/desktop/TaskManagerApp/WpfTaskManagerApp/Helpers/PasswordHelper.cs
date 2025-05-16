@@ -3,9 +3,16 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace WpfTaskManagerApp.Helpers;
-
 public static class PasswordHelper
 {
+    // Static constructor to confirm class loading
+    static PasswordHelper()
+    {
+        Debug.WriteLine("-----------------------------------------------------------");
+        Debug.WriteLine("PasswordHelper: STATIC CONSTRUCTOR CALLED. Class is loaded.");
+        Debug.WriteLine("-----------------------------------------------------------");
+    }
+
     public static readonly DependencyProperty PasswordProperty =
         DependencyProperty.RegisterAttached(
             "Password",
@@ -20,7 +27,6 @@ public static class PasswordHelper
 
     public static void SetPassword(DependencyObject dp, string value)
     {
-        // Debug.WriteLine($"PasswordHelper.SetPassword (Attached DP): Setting Password DP to '{(string.IsNullOrEmpty(value) ? "<empty>" : value)}' on {dp.GetType().Name}"); 
         dp.SetValue(PasswordProperty, value);
     }
 
@@ -34,27 +40,26 @@ public static class PasswordHelper
 
     private static void SetIsUpdating(DependencyObject dp, bool value)
     {
-        // Debug.WriteLine($"PasswordHelper.SetIsUpdating: Setting IsUpdating DP to '{value}' on {dp.GetType().Name}"); 
+        // Debug.WriteLine($"PasswordHelper.SetIsUpdating: Setting IsUpdating DP to '{value}' on {dp.GetType().Name}"); // Can be noisy
         dp.SetValue(IsUpdatingProperty, value);
     }
 
     private static void OnPasswordPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
     {
-        // Debug.WriteLine($"PasswordHelper.OnPasswordPropertyChanged (Attached DP changed): Sender={sender.GetType().Name}, OldValue='{e.OldValue}', NewValue='{e.NewValue}'"); 
         if (sender is PasswordBox passwordBox)
         {
-            passwordBox.PasswordChanged -= PasswordBox_PasswordChanged;
-
+            // This ensures that if the ViewModel updates the Password property,
+            // the UI (PasswordBox.Password) is updated, unless IsUpdating is true (meaning the change came from the UI itself).
             if (!GetIsUpdating(passwordBox) && passwordBox.Password != (string)e.NewValue)
             {
-                // Debug.WriteLine($"PasswordHelper.OnPasswordPropertyChanged: Updating PasswordBox.Password UI to '{e.NewValue}'"); 
+                passwordBox.PasswordChanged -= PasswordBox_PasswordChanged; // Temporarily unhook to prevent recursion
                 passwordBox.Password = (string)e.NewValue;
+                passwordBox.PasswordChanged += PasswordBox_PasswordChanged; // Re-hook
             }
             // else
             // {
-            //    Debug.WriteLine($"PasswordHelper.OnPasswordPropertyChanged: IsUpdating is true, not updating PasswordBox.Password."); 
+            //    Debug.WriteLine($"PasswordHelper.OnPasswordPropertyChanged: IsUpdating is true or PasswordBox.Password already matches. Not updating PasswordBox UI from ViewModel."); 
             // }
-            passwordBox.PasswordChanged += PasswordBox_PasswordChanged;
         }
     }
 
@@ -62,11 +67,10 @@ public static class PasswordHelper
     {
         if (sender is PasswordBox passwordBox)
         {
-            // Debug.WriteLine($"PasswordHelper.PasswordBox_PasswordChanged (UI Event): PasswordBox content changed. Current PasswordBox.Password = '{(string.IsNullOrEmpty(passwordBox.Password) ? "<empty>" : passwordBox.Password)}'");
 
-            SetIsUpdating(passwordBox, true);
-            SetPassword(passwordBox, passwordBox.Password);
-            SetIsUpdating(passwordBox, false);
+            SetIsUpdating(passwordBox, true); // Signal that the source of change is the UI
+            SetPassword(passwordBox, passwordBox.Password); // Update the attached DP, which will update the ViewModel via TwoWay binding
+            SetIsUpdating(passwordBox, false); // Reset the flag
         }
     }
 
@@ -89,33 +93,32 @@ public static class PasswordHelper
 
     private static void OnAttachBehaviorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
+
         if (d is PasswordBox pb)
         {
             bool attach = (bool)e.NewValue;
-            // Debug.WriteLine($"PasswordHelper.OnAttachBehaviorChanged: AttachBehavior changed to {attach} for {pb.Name}");
 
+            // Always remove first to prevent multiple subscriptions if this callback were somehow invoked multiple times for the same instance.
+            pb.PasswordChanged -= PasswordBox_PasswordChanged;
             if (attach)
             {
-                pb.PasswordChanged -= PasswordBox_PasswordChanged;
                 pb.PasswordChanged += PasswordBox_PasswordChanged;
-                // Debug.WriteLine($"PasswordHelper.OnAttachBehaviorChanged: Hooked PasswordChanged event for {pb.Name}");
 
+                // Initial sync: If PasswordBox has a value and ViewModel's bound property is empty, update ViewModel.
                 string currentViewModelPassword = GetPassword(pb);
-                if (pb.Password != currentViewModelPassword)
+                if (!string.IsNullOrEmpty(pb.Password) && string.IsNullOrEmpty(currentViewModelPassword))
                 {
-                    if (!string.IsNullOrEmpty(pb.Password) && string.IsNullOrEmpty(currentViewModelPassword))
-                    {
-                        // Debug.WriteLine($"PasswordHelper.OnAttachBehaviorChanged: Initial sync from PasswordBox ('{pb.Password}') to ViewModel (was empty).");
-                        PasswordBox_PasswordChanged(pb, new RoutedEventArgs());
-                    }
+                    PasswordBox_PasswordChanged(pb, new RoutedEventArgs());
+                }
+                // If ViewModel has a value and PasswordBox is empty, OnPasswordPropertyChanged (triggered by binding) should handle it.
+                else if (string.IsNullOrEmpty(pb.Password) && !string.IsNullOrEmpty(currentViewModelPassword))
+                {
+                    pb.Password = currentViewModelPassword;
                 }
             }
-            else
-            {
-                pb.PasswordChanged -= PasswordBox_PasswordChanged;
-                // Debug.WriteLine($"PasswordHelper.OnAttachBehaviorChanged: Unhooked PasswordChanged event for {pb.Name}");
-            }
+        }
+        else
+        {
         }
     }
 }
-

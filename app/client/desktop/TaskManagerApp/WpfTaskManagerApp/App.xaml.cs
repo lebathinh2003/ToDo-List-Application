@@ -24,24 +24,19 @@ public partial class App : Application
             return client;
         });
 
-        // ***** ĐĂNG KÝ ITokenProvider *****
         services.AddSingleton<ITokenProvider, TokenProvider>();
-
-        // Đăng ký các service khác
-        // IUserService không còn phụ thuộc trực tiếp vào IAuthenticationService nữa
         services.AddSingleton<IUserService, ApiUserService>();
-
-        // ApiAuthenticationService giờ sẽ inject IUserService và ITokenProvider
         services.AddSingleton<IAuthenticationService, ApiAuthenticationService>();
-
-        // ApiTaskService giờ sẽ inject ITokenProvider
         services.AddSingleton<ITaskService, ApiTaskService>();
-
         services.AddSingleton<ISignalRService, SignalRService>();
 
         services.AddSingleton<INavigationService>(sp =>
             new NavigationService(type => (ViewModelBase)sp.GetRequiredService(type))
         );
+
+        // ***** ĐĂNG KÝ TOASTNOTIFICATIONVIEWMODEL *****
+        services.AddSingleton<ToastNotificationViewModel>();
+        // ***** KẾT THÚC ĐĂNG KÝ *****
 
         services.AddSingleton<MainViewModel>();
         services.AddTransient<LoginViewModel>();

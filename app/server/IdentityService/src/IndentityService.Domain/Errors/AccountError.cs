@@ -28,6 +28,11 @@ public class AccountError
             Message: "Some parameter is null check the server's log for full errors",
             StatusCode: (int)HttpStatusCode.InternalServerError);
 
+    public static Error InvalidParameters =>
+        new("AccountError.InvalidParameters",
+            Message: "Some parameter is invalid check the server's log for full errors",
+            StatusCode: (int)HttpStatusCode.InternalServerError);
+
     public static Error PermissionDenied =>
         new("AccountError.PermissionDenied",
             Message: "Permission denied.",
@@ -52,4 +57,14 @@ public class AccountError
         new("AccountError.GetAccountFail",
             Message: "Get Account fail.",
             StatusCode: (int)HttpStatusCode.InternalServerError);
+
+    public static Error EmailAlreadyExists =>
+        new("AccountError.EmailAlreadyExists",
+            Message: "Email already exists.",
+            StatusCode: (int)HttpStatusCode.Conflict);
+
+    public static Error UsernameAlreadyExists =>
+        new("AccountError.UsernameAlreadyExists",
+            Message: "Username already exists.",
+            StatusCode: (int)HttpStatusCode.Conflict);
 }

@@ -12,3 +12,12 @@ public enum TaskStatus
     Done,
     Cancelled
 }
+public enum ToastType
+{
+    Information,
+    Success,
+    Warning,
+    Error
+}
+
+
