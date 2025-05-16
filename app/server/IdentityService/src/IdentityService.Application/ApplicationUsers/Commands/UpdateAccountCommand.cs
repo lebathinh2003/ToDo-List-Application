@@ -13,6 +13,8 @@ public record UpdateAccountCommand : IRequest<Result>
     [Required]
     public Guid Id { get; init; }
     public string? Email { get; init; }
+    public string? Username { get; init; }
+    public string? Password { get; init; }
     public string? IsActive { get; init; }
 }
 public class GetAccountDetailQueryHandler : IRequestHandler<UpdateAccountCommand, Result>
@@ -60,6 +62,21 @@ public class GetAccountDetailQueryHandler : IRequestHandler<UpdateAccountCommand
                 account.Email = request.Email;
             }
 
+            if (!string.IsNullOrEmpty(request.Username))
+            {
+                var existingUser = await _userManager.FindByNameAsync(request.Username);
+                if (existingUser != null && existingUser.Id != account.Id)
+                {
+                    return Result.Failure(AccountError.UsernameAlreadyExists, "Username already exists.");
+                }
+                account.UserName = request.Username;
+            }
+
+            if (!string.IsNullOrEmpty(request.Password))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(account);
+                var result = await _userManager.ResetPasswordAsync(account, token, request.Password);
+            }
 
             if (!string.IsNullOrEmpty(request.IsActive))
             {

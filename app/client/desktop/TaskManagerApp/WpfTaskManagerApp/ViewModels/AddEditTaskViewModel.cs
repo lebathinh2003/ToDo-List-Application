@@ -53,18 +53,17 @@ public class AddEditTaskViewModel : ViewModelBase
     public ICommand SaveCommand { get; }
     public Action<bool>? CloseActionWithResult { get; set; }
 
-    public AddEditTaskViewModel()
+    public AddEditTaskViewModel() // Constructor cho Design-Time
     {
         _taskService = null;
         _userService = null;
         Title = "Design Task Title";
         Description = "Design task description.";
         SelectedStatus = TaskStatus.ToDo;
-        AssignableUsers = new ObservableCollection<User> { new User(Guid.NewGuid(), "designer", "d@e.com", UserRole.Staff, "Design Assignee") };
+        AssignableUsers = new ObservableCollection<User> { new User(Guid.NewGuid(), "designer", "designer@example.com", UserRole.Staff, "Design Assignee") };
         SelectedAssignee = AssignableUsers.FirstOrDefault();
         SaveCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
     }
-
 
     public AddEditTaskViewModel(ITaskService taskService, IUserService userService)
     {
@@ -79,12 +78,23 @@ public class AddEditTaskViewModel : ViewModelBase
         if (_userService == null) return;
         try
         {
-            var users = await _userService.GetUsersAsync(includeInactive: false);
+            // Gọi GetUsersAsync. Giả sử chúng ta muốn tất cả user active, không phân trang cho dropdown này.
+            // API GetUsersAsync có thể cần được điều chỉnh để hỗ trợ việc lấy tất cả user
+            // hoặc bạn có thể gọi với limit rất lớn.
+            // Hiện tại, giả sử gọi với skip=0 và một limit đủ lớn hoặc API mặc định trả về tất cả nếu limit không được chỉ định.
+            var paginatedResult = await _userService.GetUsersAsync(skip: 0, limit: 1000, includeInactive: false);
+
             AssignableUsers.Clear();
-            foreach (var user in users.OrderBy(u => u.FullName))
+            if (paginatedResult?.PaginatedData != null) // ***** SỬA Ở ĐÂY *****
             {
-                AssignableUsers.Add(user);
+                // ***** ÁP DỤNG OrderBy CHO paginatedResult.PaginatedData *****
+                foreach (var user in paginatedResult.PaginatedData.OrderBy(u => u.FullName))
+                {
+                    AssignableUsers.Add(user);
+                }
             }
+            // ***** KẾT THÚC SỬA *****
+
             if (_isEditMode && _editingTaskOriginal.AssigneeId.HasValue)
             {
                 SelectedAssignee = AssignableUsers.FirstOrDefault(u => u.Id == _editingTaskOriginal.AssigneeId.Value);
@@ -92,10 +102,10 @@ public class AddEditTaskViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error loading assignable users: {ex.Message}");
+            Debug.WriteLine($"Error loading assignable users in AddEditTaskViewModel: {ex.Message}");
+            // Cân nhắc hiển thị lỗi cho người dùng nếu cần
         }
     }
-
 
     public void InitializeForAdd()
     {
@@ -109,7 +119,7 @@ public class AddEditTaskViewModel : ViewModelBase
     public void InitializeForEdit(TaskItem taskToEdit)
     {
         _isEditMode = true;
-        _editingTaskOriginal = new TaskItem( 
+        _editingTaskOriginal = new TaskItem(
             taskToEdit.Id, taskToEdit.Title, taskToEdit.Description, taskToEdit.Status, taskToEdit.IsActive)
         {
             AssigneeId = taskToEdit.AssigneeId,
@@ -162,7 +172,7 @@ public class AddEditTaskViewModel : ViewModelBase
         }
         IsSaving = true;
 
-        TaskItem taskToSave = new TaskItem 
+        TaskItem taskToSave = new TaskItem
         {
             Id = _isEditMode ? _editingTaskOriginal.Id : Guid.NewGuid(),
             Title = this.Title,
@@ -190,9 +200,7 @@ public class AddEditTaskViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error saving task: {ex.Message}");
             ErrorMessage = "An unexpected error occurred while saving task.";
-            success = false;
         }
         finally
         {

@@ -13,7 +13,18 @@ public class UpdateUserRequest
     [MaxLength(50)]
     public string? Email { get; set; }
 
+    [JsonPropertyName("username")]
+    [MaxLength(50)]
+    public string? Username { get; set; }
+
+    [JsonPropertyName("password")]
+    [MaxLength(50)]
+    public string? Password { get; set; }
+
     [JsonPropertyName("address")]
     [MaxLength(100)]
     public string? Address { get; set; }
+
+    [JsonPropertyName("isActive")]
+    public bool? IsActive { get; set; }
 }

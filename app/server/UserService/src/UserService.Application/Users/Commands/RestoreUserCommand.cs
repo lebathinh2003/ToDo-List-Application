@@ -1,28 +1,24 @@
 ﻿using Contract.Common;
-using Contract.Event.UserEvent;
-using Contract.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using UserService.Domain.Errors;
 using UserService.Domain.Interfaces;
 namespace UserService.Application.Users.Commands;
-public record DeleteUserCommand : IRequest<Result>
+public record RestoreUserCommand : IRequest<Result>
 {
     public Guid UserId { get; set; }
 
 }
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
+public class RestoreUserCommandHandler : IRequestHandler<RestoreUserCommand, Result>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IServiceBus _serviceBus;
 
-    public DeleteUserCommandHandler(IApplicationDbContext context, IServiceBus serviceBus)
+    public RestoreUserCommandHandler(IApplicationDbContext context)
     {
         _context = context;
-        _serviceBus = serviceBus;
     }
 
-    public async Task<Result> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(RestoreUserCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -38,21 +34,16 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
                 return Result.Failure(UserError.PermissionDenied);
             }
 
-            if (user.IsActive == false)
+            if (user.IsActive == true)
             {
-                return Result.Failure(UserError.UserAlreadyInactive);
+                return Result.Failure(UserError.UserAlreadyActive);
             }
 
-            user.IsActive = false;
+            user.IsActive = true;
 
             _context.Users.Update(user);
 
             await _context.Instance.SaveChangesAsync(cancellationToken);
-
-            await _serviceBus.Publish(new DeleteUserEvent
-            {
-                UserId = user.Id
-            });
 
             return Result.Success();
         }

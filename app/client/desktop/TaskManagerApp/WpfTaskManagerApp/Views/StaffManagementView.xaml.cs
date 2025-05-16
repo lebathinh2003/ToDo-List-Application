@@ -1,28 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
+﻿using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using WpfTaskManagerApp.ViewModels;
 
-namespace WpfTaskManagerApp.Views
+namespace WpfTaskManagerApp.Views;
+
+public partial class StaffManagementView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for StaffManagementView.xaml
-    /// </summary>
-    public partial class StaffManagementView : UserControl
+    public StaffManagementView()
     {
-        public StaffManagementView()
+        InitializeComponent();
+    }
+
+    private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
         {
-            InitializeComponent();
+            if (DataContext is StaffManagementViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
+            {
+                viewModel.SearchCommand.Execute(null);
+            }
         }
+    }
+
+    private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+
+    }
+
+    private void Button_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+
     }
 }

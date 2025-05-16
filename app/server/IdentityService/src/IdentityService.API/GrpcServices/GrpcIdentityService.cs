@@ -84,13 +84,10 @@ public class GrpcIdentityService : GrpcIdentity.GrpcIdentityBase
         {
             Id = Guid.Parse(request.Id),
             Email = request.Email,
+            Username = request.Username,
             IsActive = request.IsActive,
         });
         response.ThrowIfFailure();
-
-        return new GrpcStatusResponse
-        {
-            IsSuccess = response.IsSuccess,
-        };
+        return new GrpcStatusResponse{ IsSuccess = true};
     }
 }

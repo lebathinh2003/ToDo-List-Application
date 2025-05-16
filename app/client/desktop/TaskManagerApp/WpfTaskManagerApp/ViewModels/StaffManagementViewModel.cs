@@ -11,7 +11,9 @@ public class StaffManagementViewModel : ViewModelBase
 {
     private readonly IUserService? _userService;
     private readonly IServiceProvider? _serviceProvider;
+    private readonly ToastNotificationViewModel? _toastViewModel;
     private bool _isLoading;
+
     public bool IsLoading
     {
         get => _isLoading;
@@ -20,17 +22,17 @@ public class StaffManagementViewModel : ViewModelBase
             if (SetProperty(ref _isLoading, value))
             {
                 (AddStaffCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (EditStaffCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (DeleteStaffCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (EditStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged();
+                (DeleteStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged();
+                (RestoreStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged();
                 (SearchCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (RefreshCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                UpdatePaginationCommandsCanExecute();
             }
         }
     }
 
-    private ObservableCollection<User> _staffList = new(); 
+    private ObservableCollection<User> _staffList = new ObservableCollection<User>();
     public ObservableCollection<User> StaffList
     {
         get => _staffList;
@@ -45,8 +47,9 @@ public class StaffManagementViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedStaff, value))
             {
-                (EditStaffCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (DeleteStaffCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (EditStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged();
+                (DeleteStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged();
+                (RestoreStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged();
             }
         }
     }
@@ -55,14 +58,38 @@ public class StaffManagementViewModel : ViewModelBase
     public string SearchTerm
     {
         get => _searchTerm;
+        set => SetProperty(ref _searchTerm, value);
+    }
+
+    private string? _sortBy;
+    public string? SortBy
+    {
+        get => _sortBy;
         set
         {
-            if (SetProperty(ref _searchTerm, value))
+            if (SetProperty(ref _sortBy, value))
             {
-                OnSearchTermChanged();
+                CurrentPage = 1;
+                _ = LoadStaffAsync();
             }
         }
     }
+
+    private string _sortOrder = "asc";
+    public string SortOrder
+    {
+        get => _sortOrder;
+        set
+        {
+            if (SetProperty(ref _sortOrder, value))
+            {
+                CurrentPage = 1;
+                _ = LoadStaffAsync();
+            }
+        }
+    }
+    public ObservableCollection<string> SortableProperties { get; }
+    public ObservableCollection<string> SortOrders { get; }
 
     private int _currentPage = 1;
     public int CurrentPage
@@ -70,27 +97,27 @@ public class StaffManagementViewModel : ViewModelBase
         get => _currentPage;
         set
         {
+            if (value < 1) value = 1;
             if (SetProperty(ref _currentPage, value))
             {
-                (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(CurrentPageDisplay));
+                UpdatePaginationCommandsCanExecute();
             }
         }
     }
+    public string CurrentPageDisplay => $"{CurrentPage}";
 
-    private int _pageSize = 10;
-    public int PageSize
+    private int _limit = 10;
+    public int Limit
     {
-        get => _pageSize;
+        get => _limit;
         set
         {
-            if (SetProperty(ref _pageSize, value))
+            if (value < 1) value = 1;
+            if (SetProperty(ref _limit, value))
             {
-                _currentPage = 1;
-                OnPropertyChanged(nameof(CurrentPage));
-                (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                OnPageSizeChanged();
+                CurrentPage = 1;
+                _ = LoadStaffAsync();
             }
         }
     }
@@ -99,204 +126,200 @@ public class StaffManagementViewModel : ViewModelBase
     public int TotalItems
     {
         get => _totalItems;
-        set
+        private set
         {
             if (SetProperty(ref _totalItems, value))
             {
                 OnPropertyChanged(nameof(TotalPages));
-                (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(TotalPagesDisplay));
+                UpdatePaginationCommandsCanExecute();
             }
         }
     }
-    public int TotalPages => (TotalItems == 0 || PageSize <= 0) ? 0 : (int)Math.Ceiling((double)TotalItems / PageSize);
+
+    public int TotalPages => (TotalItems == 0 || Limit <= 0) ? 1 : (int)Math.Ceiling((double)TotalItems / Limit);
+    public string TotalPagesDisplay => $"{TotalPages}";
+
+    public bool CanGoToPreviousPage => CurrentPage > 1 && !IsLoading;
+    public bool CanGoToNextPage => CurrentPage < TotalPages && !IsLoading;
 
     public ICommand AddStaffCommand { get; }
     public ICommand EditStaffCommand { get; }
     public ICommand DeleteStaffCommand { get; }
+    public ICommand RestoreStaffCommand { get; }
     public ICommand SearchCommand { get; }
-    public ICommand NextPageCommand { get; }
-    public ICommand PreviousPageCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand FirstPageCommand { get; }
+    public ICommand PreviousPageCommand { get; }
+    public ICommand NextPageCommand { get; }
+    public ICommand LastPageCommand { get; }
 
-    public StaffManagementViewModel()
+    public StaffManagementViewModel() // Constructor cho Design-Time
     {
-        _userService = null;
-        _serviceProvider = null;
+        _userService = null!;
+        _serviceProvider = null!;
+        _toastViewModel = new ToastNotificationViewModel();
+
+        SortableProperties = new ObservableCollection<string> { "FullName", "Username", "Email", "Role" };
+        SortOrders = new ObservableCollection<string> { "asc", "desc" };
+        SortBy = "FullName";
+
         StaffList = new ObservableCollection<User>
             {
-                new User(Guid.NewGuid(), "design.admin", "admin@design.com", UserRole.Admin, "Design Admin"),
-                new User(Guid.NewGuid(), "design.staff", "staff@design.com", UserRole.Staff, "Design Staff")
+                new User(Guid.NewGuid(), "design.admin", "admin@design.com", UserRole.Admin, "Design Admin", "123 Design St", true),
+                new User(Guid.NewGuid(), "design.staff1", "staff1@design.com", UserRole.Staff, "Design Staff One", "456 Design Ave", true),
+                new User(Guid.NewGuid(), "design.staff2.inactive", "staff2@design.com", UserRole.Staff, "Design Staff Two", "789 Design Rd", false)
             };
-        TotalItems = StaffList.Count;
-        IsLoading = false;
+        TotalItems = 3; CurrentPage = 1; Limit = 2; IsLoading = false;
 
         AddStaffCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
-        EditStaffCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
-        DeleteStaffCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
+        EditStaffCommand = new RelayCommand<User>(async _ => await Task.CompletedTask, _ => false);
+        DeleteStaffCommand = new RelayCommand<User>(async _ => await Task.CompletedTask, _ => false);
+        RestoreStaffCommand = new RelayCommand<User>(async _ => await Task.CompletedTask, _ => false);
         SearchCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
-        NextPageCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
-        PreviousPageCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
         RefreshCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
+        FirstPageCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
+        PreviousPageCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
+        NextPageCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
+        LastPageCommand = new RelayCommand(async _ => await Task.CompletedTask, _ => false);
+        UpdatePaginationCommandsCanExecute();
     }
 
-
-    public StaffManagementViewModel(IUserService userService, IServiceProvider serviceProvider)
+    public StaffManagementViewModel(IUserService userService, IServiceProvider serviceProvider, ToastNotificationViewModel toastViewModel)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _toastViewModel = toastViewModel ?? throw new ArgumentNullException(nameof(toastViewModel));
 
-        AddStaffCommand = new RelayCommand(async param => await OpenAddStaffDialog(param), param => !IsLoading);
-        EditStaffCommand = new RelayCommand(async param => await OpenEditStaffDialog(param), param => SelectedStaff != null && !IsLoading);
-        DeleteStaffCommand = new RelayCommand(async _ => await DeleteStaffAsync(), _ => SelectedStaff != null && SelectedStaff.IsActive && !IsLoading);
+        SortableProperties = new ObservableCollection<string> { "FullName", "Username", "Email", "Role" };
+        SortOrders = new ObservableCollection<string> { "asc", "desc" };
+        _sortBy = "FullName";
+        _sortOrder = "asc";
 
-        SearchCommand = new RelayCommand(async _ => {
-            _currentPage = 1;
-            OnPropertyChanged(nameof(CurrentPage));
-            await LoadStaffAsync();
-        }, _ => !IsLoading);
+        AddStaffCommand = new RelayCommand(async _ => await OpenAddEditStaffDialog(null), _ => !IsLoading);
+        EditStaffCommand = new RelayCommand<User>(async (user) => await OpenAddEditStaffDialog(user), (user) => user != null && !IsLoading);
+        DeleteStaffCommand = new RelayCommand<User>(async (user) => await DeleteStaffAsync(user), (user) => user != null && user.IsActive && !IsLoading);
+        RestoreStaffCommand = new RelayCommand<User>(async (user) => await RestoreStaffAsync(user), (user) => user != null && !user.IsActive && !IsLoading);
 
-        NextPageCommand = new RelayCommand(async _ => {
-            if (CurrentPage < TotalPages)
-            {
-                CurrentPage++;
-                await LoadStaffAsync();
-            }
-        }, _ => CurrentPage < TotalPages && !IsLoading);
-
-        PreviousPageCommand = new RelayCommand(async _ => {
-            if (CurrentPage > 1)
-            {
-                CurrentPage--;
-                await LoadStaffAsync();
-            }
-        }, _ => CurrentPage > 1 && !IsLoading);
-
+        SearchCommand = new RelayCommand(async _ => { CurrentPage = 1; await LoadStaffAsync(); }, _ => !IsLoading);
         RefreshCommand = new RelayCommand(async _ => await LoadStaffAsync(), _ => !IsLoading);
+
+        FirstPageCommand = new RelayCommand(async _ => { if (CurrentPage != 1) { CurrentPage = 1; await LoadStaffAsync(); } }, _ => CanGoToPreviousPage);
+        PreviousPageCommand = new RelayCommand(async _ => { if (CanGoToPreviousPage) { CurrentPage--; await LoadStaffAsync(); } }, _ => CanGoToPreviousPage);
+        NextPageCommand = new RelayCommand(async _ => { if (CanGoToNextPage) { CurrentPage++; await LoadStaffAsync(); } }, _ => CanGoToNextPage);
+        LastPageCommand = new RelayCommand(async _ => { if (CurrentPage != TotalPages && TotalPages > 0) { CurrentPage = TotalPages; await LoadStaffAsync(); } }, _ => CanGoToNextPage && CurrentPage != TotalPages);
 
         _ = LoadStaffAsync();
     }
 
-    private async void OnSearchTermChanged()
+    private void UpdatePaginationCommandsCanExecute()
     {
-        if (_userService == null) return;
-        try
-        {
-            _currentPage = 1;
-            OnPropertyChanged(nameof(CurrentPage));
-            await LoadStaffAsync();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error in OnSearchTermChanged (Staff): {ex}");
-        }
-    }
-
-    private async void OnPageSizeChanged()
-    {
-        if (_userService == null) return;
-        try
-        {
-            await LoadStaffAsync();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error in OnPageSizeChanged (Staff): {ex}");
-        }
+        OnPropertyChanged(nameof(CanGoToPreviousPage));
+        OnPropertyChanged(nameof(CanGoToNextPage));
+        (FirstPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (LastPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
     public async Task LoadStaffAsync()
     {
-        if (_userService == null) return;
+        if (_userService == null) { Debug.WriteLine("StaffManagementViewModel: UserService is null. Cannot load staff."); return; }
         if (IsLoading) return;
         IsLoading = true;
+        SelectedStaff = null;
+        Debug.WriteLine($"StaffManagementViewModel.LoadStaffAsync: Loading staff. Page: {CurrentPage}, Limit: {Limit}, SortBy: {SortBy}, SortOrder: {SortOrder}, Keyword: '{SearchTerm}'");
         try
         {
-            if (PageSize <= 0) _pageSize = 10;
+            if (Limit <= 0) _limit = 10;
+            int skip = (CurrentPage - 1);
 
-            var allUsers = await _userService.GetUsersAsync(SearchTerm, includeInactive: true);
+            var paginatedResult = await _userService.GetUsersAsync(skip, Limit, SortBy, SortOrder, SearchTerm, includeInactive: true);
 
-            TotalItems = allUsers.Count();
+            if (paginatedResult?.PaginatedData != null)
+            {
+                StaffList = new ObservableCollection<User>(paginatedResult.PaginatedData);
+                if (paginatedResult.Metadata != null)
+                {
+                    TotalItems = paginatedResult.Metadata.TotalRow;
+                    Debug.WriteLine($"StaffManagementViewModel.LoadStaffAsync: Loaded {StaffList.Count} users. TotalItems from API: {TotalItems}. Calculated TotalPages: {TotalPages}");
+                    Debug.WriteLine($"StaffManagementViewModel.LoadStaffAsync: skip {skip}, limit {Limit}, sortBy {SortBy}, sortOrder {SortOrder}, keyword {SearchTerm}"); 
+                    if (CurrentPage > TotalPages && TotalPages > 0) { CurrentPage = TotalPages; }
+                    else if (TotalPages == 0 && TotalItems == 0) { CurrentPage = 1; }
+                }
+                else { TotalItems = StaffList.Count; }
 
-            var pagedUsers = allUsers
-                                .OrderBy(u => u.FullName)
-                                .Skip((CurrentPage - 1) * PageSize)
-                                .Take(PageSize);
-
-            StaffList = new ObservableCollection<User>(pagedUsers);
-            SelectedStaff = null;
+                // ***** LOG ISACTIVE STATUS OF LOADED USERS *****
+                // foreach (var user in StaffList)
+                // {
+                //     Debug.WriteLine($"StaffManagementViewModel.LoadStaffAsync: User: {user.Username}, IsActive: {user.IsActive}");
+                // }
+                // ***** END LOG *****
+            }
+            else
+            {
+                StaffList.Clear(); TotalItems = 0; CurrentPage = 1;
+                _toastViewModel?.Show("Could not load staff data or no staff found.", ToastType.Warning);
+            }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"Failed to load staff: {ex.Message}");
+            _toastViewModel?.Show($"Error loading staff: {ex.Message}", ToastType.Error);
+            StaffList.Clear(); TotalItems = 0;
         }
-        finally
-        {
-            IsLoading = false;
-        }
+        finally { IsLoading = false; }
     }
 
-    private async Task OpenAddStaffDialog(object? parameter)
+    private async Task OpenAddEditStaffDialog(User? userToEdit) { /* ... Giữ nguyên ... */ }
+
+    private async Task DeleteStaffAsync(User? staffToDelete)
     {
-        if (_serviceProvider == null || _userService == null) return;
+        if (staffToDelete == null || _userService == null || _toastViewModel == null) return;
+        Debug.WriteLine($"StaffManagementViewModel.DeleteStaffAsync: Attempting to delete user '{staffToDelete.FullName}' (ID: {staffToDelete.Id}, IsActive: {staffToDelete.IsActive})");
 
-        var addEditUserViewModel = _serviceProvider.GetRequiredService<AddEditUserViewModel>();
-        addEditUserViewModel.InitializeForAdd();
-
-        addEditUserViewModel.CloseActionWithResult = async (success) =>
-        {
-            // Debug.WriteLine($"AddEditUserViewModel CloseActionWithResult called with: {success} from StaffManagementViewModel");
-            if (success)
-            {
-                await LoadStaffAsync();
-            }
-        };
-
-        // Debug.WriteLine("Simulating showing Add Staff Dialog...");
-        await Task.Delay(1);
-        // Debug.WriteLine("Add Staff Dialog simulation finished.");
-    }
-
-    private async Task OpenEditStaffDialog(object? parameter)
-    {
-        if (SelectedStaff == null || _serviceProvider == null || _userService == null) return;
-
-        var addEditUserViewModel = _serviceProvider.GetRequiredService<AddEditUserViewModel>();
-        addEditUserViewModel.InitializeForEdit(SelectedStaff); // SelectedStaff.Id giờ là Guid
-
-        addEditUserViewModel.CloseActionWithResult = async (success) =>
-        {
-            // Debug.WriteLine($"AddEditUserViewModel CloseActionWithResult called with: {success} from StaffManagementViewModel");
-            if (success)
-            {
-                await LoadStaffAsync();
-            }
-        };
-
-        // Debug.WriteLine($"Simulating showing Edit Staff Dialog for {SelectedStaff.Username}...");
-        await Task.Delay(1);
-        // Debug.WriteLine("Edit Staff Dialog simulation finished.");
-    }
-
-    private async Task DeleteStaffAsync()
-    {
-        if (SelectedStaff == null || _userService == null) return; // SelectedStaff.Id giờ là Guid
-
+        IsLoading = true;
         try
         {
-            bool success = await _userService.DeleteUserAsync(SelectedStaff.Id);
+            bool success = await _userService.DeleteUserAsync(staffToDelete.Id);
             if (success)
             {
-                await LoadStaffAsync();
+                _toastViewModel.Show($"Staff '{staffToDelete.FullName}' marked as inactive.", ToastType.Success);
+                Debug.WriteLine($"StaffManagementViewModel.DeleteStaffAsync: API call successful for user '{staffToDelete.FullName}'. Reloading staff list...");
+                await LoadStaffAsync(); // Tải lại danh sách
             }
             else
             {
-                // Debug.WriteLine($"Soft delete failed for staff {SelectedStaff.Username}");
+                _toastViewModel.Show($"Failed to mark staff '{staffToDelete.FullName}' as inactive.", ToastType.Error);
+                Debug.WriteLine($"StaffManagementViewModel.DeleteStaffAsync: API call FAILED for user '{staffToDelete.FullName}'.");
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) { _toastViewModel.Show($"Error deleting staff: {ex.Message}", ToastType.Error); Debug.WriteLine($"StaffManagementViewModel.DeleteStaffAsync: Exception for user '{staffToDelete.FullName}': {ex.Message}"); }
+        finally { IsLoading = false; }
+    }
+
+    private async Task RestoreStaffAsync(User? staffToRestore)
+    {
+        if (staffToRestore == null || _userService == null || _toastViewModel == null) return;
+        Debug.WriteLine($"StaffManagementViewModel.RestoreStaffAsync: Attempting to restore user '{staffToRestore.FullName}' (ID: {staffToRestore.Id}, IsActive: {staffToRestore.IsActive})");
+
+        IsLoading = true;
+        try
         {
-            Debug.WriteLine($"Error deleting staff: {ex.Message}");
+            bool success = await _userService.RestoreUserAsync(staffToRestore.Id);
+            if (success)
+            {
+                _toastViewModel.Show($"Staff '{staffToRestore.FullName}' restored successfully.", ToastType.Success);
+                Debug.WriteLine($"StaffManagementViewModel.RestoreStaffAsync: API call successful for user '{staffToRestore.FullName}'. Reloading staff list...");
+                await LoadStaffAsync(); // Tải lại danh sách
+            }
+            else
+            {
+                _toastViewModel.Show($"Failed to restore staff '{staffToRestore.FullName}'.", ToastType.Error);
+                Debug.WriteLine($"StaffManagementViewModel.RestoreStaffAsync: API call FAILED for user '{staffToRestore.FullName}'.");
+            }
         }
+        catch (Exception ex) { _toastViewModel.Show($"Error restoring staff: {ex.Message}", ToastType.Error); Debug.WriteLine($"StaffManagementViewModel.RestoreStaffAsync: Exception for user '{staffToRestore.FullName}': {ex.Message}"); }
+        finally { IsLoading = false; }
     }
 }

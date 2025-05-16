@@ -47,6 +47,12 @@ public class GetFullUserQueryHandler : IRequestHandler<GetFullUserQuery, Result<
             }
 
             var userQuery = _context.Users.AsQueryable();
+
+            if(paginatedDTO.IncludeInactive != null && paginatedDTO.IncludeInactive.Value == false)
+            {
+                userQuery = userQuery.Where(u => u.IsActive).AsQueryable();
+            }
+
             if (!string.IsNullOrEmpty(paginatedDTO.Keyword))
             {
                 var keyword = paginatedDTO.Keyword.ToLower();

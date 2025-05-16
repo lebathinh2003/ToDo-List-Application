@@ -23,7 +23,9 @@ message GrpcIdsSetRequest {
 message GrpcUpdateAccountRequest {
     string Id = 1;
     string Email = 2;
-    string IsActive = 3;
+    string Username = 3;
+    string Password = 4;
+    string IsActive = 5;
 }
 
 message GrpcSimpleAccountDTO {

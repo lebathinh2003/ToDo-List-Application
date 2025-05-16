@@ -38,26 +38,51 @@ public class ApiUserService : IUserService
         await Task.CompletedTask;
     }
 
-    public async Task<IEnumerable<User>> GetUsersAsync(string? searchTerm = null, bool includeInactive = false)
+    // ***** CẬP NHẬT TRIỂN KHAI GetUsersAsync *****
+    public async Task<PaginatedResult<User>?> GetUsersAsync(
+        int skip = 0,
+        int limit = 10,
+        string? sortBy = null,
+        string? sortOrder = "asc",
+        string? keyword = null,
+        bool includeInactive = false)
     {
         await SetAuthHeader();
-        var queryParams = new List<string>();
-        if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
-        if (includeInactive) queryParams.Add("includeInactive=true");
+        var queryParams = new List<string>
+            {
+                $"skip={skip}",
+                $"limit={limit}"
+            };
+
+        if (!string.IsNullOrWhiteSpace(sortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+        if (!string.IsNullOrWhiteSpace(sortOrder)) queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
+        if (!string.IsNullOrWhiteSpace(keyword)) queryParams.Add($"keyword={Uri.EscapeDataString(keyword)}");
+        if (includeInactive) queryParams.Add("includeInactive=true"); // Giả sử API có tham số này
+
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
+
+        Debug.WriteLine($"ApiUserService.GetUsersAsync: Requesting URL: {requestUri}");
+
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<List<User>>(_jsonSerializerOptions) ?? new List<User>();
+                var result = await response.Content.ReadFromJsonAsync<PaginatedResult<User>>(_jsonSerializerOptions);
+                if (result?.Metadata != null)
+                {
+                    Debug.WriteLine($"ApiUserService.GetUsersAsync: Received {result.PaginatedData?.Count} users. TotalRows: {result.Metadata.TotalRow}, TotalPages: {result.Metadata.TotalPage}");
+                }
+                return result;
             }
-            Debug.WriteLine($"Error fetching users: {response.StatusCode}");
+            Debug.WriteLine($"Error fetching users: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex) { Debug.WriteLine($"GetUsersAsync error: {ex.Message}"); }
-        return new List<User>();
+        return null; // Trả về null nếu có lỗi hoặc không thành công
     }
+    // ***** KẾT THÚC CẬP NHẬT TRIỂN KHAI GetUsersAsync *****
+
 
     public async Task<User?> GetUserByIdAsync(Guid userId)
     {
@@ -65,105 +90,52 @@ public class ApiUserService : IUserService
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{userId}");
-            Debug.WriteLine($"ApiUserService.GetUserByIdAsync: User API response status for ID {userId}: {response.StatusCode}");
             if (response.IsSuccessStatusCode)
             {
-                string jsonResponse = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine($"ApiUserService.GetUserByIdAsync: User API JSON response for ID {userId}: {jsonResponse}");
-                User? user = JsonSerializer.Deserialize<User>(jsonResponse, _jsonSerializerOptions);
-                if (user != null)
-                {
-                    Debug.WriteLine($"ApiUserService.GetUserByIdAsync: Deserialized user {userId} - FullName: '{user.FullName}', Email: '{user.Email}', Address: '{user.Address}', Username: '{user.Username}', Role (from User API): {user.Role}, IsActive: {user.IsActive}");
-                }
-                else
-                {
-                    Debug.WriteLine($"ApiUserService.GetUserByIdAsync: Deserialization returned null for user {userId}.");
-                }
-                return user;
+                return await response.Content.ReadFromJsonAsync<User>(_jsonSerializerOptions);
             }
-            Debug.WriteLine($"Error fetching user {userId}: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
         }
-        catch (JsonException jsonEx)
-        {
-            Debug.WriteLine($"ApiUserService.GetUserByIdAsync JSON deserialization error for {userId}: {jsonEx.Message}");
-            Debug.WriteLine($"Path: {jsonEx.Path}, LineNumber: {jsonEx.LineNumber}, BytePositionInLine: {jsonEx.BytePositionInLine}");
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"GetUserByIdAsync error for {userId}: {ex.Message}");
-        }
+        catch (Exception ex) { /* ... logging ... */ }
         return null;
     }
 
-    public async Task<User?> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetUserByUsernameAsync(string username) { /* ... */ return null; }
+    public async Task<User?> AddUserAsync(User user, string password) { /* ... */ return null; }
+    public async Task<bool> UpdateUserAsync(User user) { /* ... */ return false; }
+
+    public async Task<bool> DeleteUserAsync(Guid userId) // Đây sẽ là soft delete (set IsActive = false)
     {
         await SetAuthHeader();
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/username/{Uri.EscapeDataString(username)}");
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<User>(_jsonSerializerOptions);
-            }
-            Debug.WriteLine($"Error fetching user by username {username}: {response.StatusCode}");
-        }
-        catch (Exception ex) { Debug.WriteLine($"GetUserByUsernameAsync error: {ex.Message}"); }
-        return null;
-    }
-    public async Task<User?> AddUserAsync(User user, string password)
-    {
-        await SetAuthHeader();
-        var createUserRequest = new
-        {
-            user.Username,
-            user.Email,
-            Password = password,
-            user.Role,
-            user.FullName,
-            user.Address,
-            user.IsActive
-        };
-        try
-        {
-            HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}", createUserRequest, _jsonSerializerOptions);
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<User>(_jsonSerializerOptions);
-            }
-            Debug.WriteLine($"Error adding user: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
-        }
-        catch (Exception ex) { Debug.WriteLine($"AddUserAsync error: {ex.Message}"); }
-        return null;
-    }
-    public async Task<bool> UpdateUserAsync(User user)
-    {
-        await SetAuthHeader();
-        var updateUserRequest = new
-        {
-            user.Username,
-            user.Email,
-            user.Role,
-            user.FullName,
-            user.Address,
-            user.IsActive
-        };
-        try
-        {
-            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{user.Id}", updateUserRequest, _jsonSerializerOptions);
+            // API của bạn có thể là DELETE /users/{userId} (thực hiện soft delete ở backend)
+            // Hoặc một PATCH/PUT request để cập nhật IsActive
+            // Ví dụ với PATCH:
+            // var patchDoc = new[] { new { op = "replace", path = "/isActive", value = false } };
+            // HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/{userId}", patchDoc);
+            // Nếu API Delete thực hiện soft delete:
+            HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/delete/id/{userId}");
             return response.IsSuccessStatusCode;
         }
-        catch (Exception ex) { Debug.WriteLine($"UpdateUserAsync error: {ex.Message}"); }
+        catch (Exception ex) { Debug.WriteLine($"DeleteUserAsync (soft delete) error: {ex.Message}"); }
         return false;
     }
-    public async Task<bool> DeleteUserAsync(Guid userId)
+
+    // ***** THÊM PHƯƠNG THỨC RestoreUserAsync *****
+    public async Task<bool> RestoreUserAsync(Guid userId)
     {
         await SetAuthHeader();
         try
         {
-            HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/{userId}");
+            // Giả sử API có một endpoint riêng để restore, hoặc dùng PATCH để set IsActive = true
+            // Ví dụ với PATCH:
+            //var patchDoc = new[] { new { op = "replace", path = "/isActive", value = true } };
+            //HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/{userId}/restore", patchDoc);
+            // Hoặc nếu endpoint là /users/{userId}/restore và body rỗng:
+            HttpResponseMessage response = await _httpClient.PostAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/restore/id/{userId}", null);
             return response.IsSuccessStatusCode;
         }
-        catch (Exception ex) { Debug.WriteLine($"DeleteUserAsync error: {ex.Message}"); }
+        catch (Exception ex) { Debug.WriteLine($"RestoreUserAsync error: {ex.Message}"); }
         return false;
     }
 }

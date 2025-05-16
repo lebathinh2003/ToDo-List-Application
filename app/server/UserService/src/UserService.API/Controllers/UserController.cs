@@ -1,4 +1,5 @@
-﻿using Contract.DTOs;
+﻿using System.Security.Claims;
+using Contract.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +37,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpDelete("id/{id}")]
+    [HttpDelete("delete/id/{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _sender.Send(new DeleteUserCommand
@@ -44,7 +45,19 @@ public class UserController : ControllerBase
             UserId = id,
         });
         result.ThrowIfFailure();
-        return Ok(result.Value);
+        return Ok();
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("restore/id/{id}")]
+    public async Task<IActionResult> RestoreUser(Guid id)
+    {
+        var result = await _sender.Send(new RestoreUserCommand
+        {
+            UserId = id,
+        });
+        result.ThrowIfFailure();
+        return Ok();
     }
 
     [Authorize]
@@ -76,9 +89,34 @@ public class UserController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpPut("id/{id}")]
     [Authorize]
-    public async Task<IActionResult> UpdateUser(Guid id , [FromBody] UpdateUserRequest updateUserRequest)
+    [HttpPut]
+    public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest updateUserRequest)
+    {
+
+        var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest("Id is null.");
+        }
+
+        var result = await _sender.Send(new UpdateUserCommand
+        {
+            Id = Guid.Parse(userId),
+            Address = updateUserRequest.Address,
+            Fullname = updateUserRequest.FullName,
+            Email = updateUserRequest.Email,
+            IsActive = null,
+        });
+        
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("id/{id}")]
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest updateUserRequest)
     {
 
         if (id == Guid.Empty)
@@ -86,15 +124,16 @@ public class UserController : ControllerBase
             return BadRequest("Id is null.");
         }
 
-        var result = await _sender.Send(new UpdateUserCommand
+        var result = await _sender.Send(new UpdateFullUserWithIdCommand
         {
             Id = id,
             Address = updateUserRequest.Address,
             Fullname = updateUserRequest.FullName,
             Email = updateUserRequest.Email,
+            Username = updateUserRequest.,
             IsActive = null,
         });
-        
+
         result.ThrowIfFailure();
         return Ok(result.Value);
     }
