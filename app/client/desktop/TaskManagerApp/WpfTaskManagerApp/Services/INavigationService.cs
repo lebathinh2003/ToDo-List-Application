@@ -1,4 +1,5 @@
 ﻿using WpfTaskManagerApp.ViewModels.Common;
+// Navigation Service
 public interface INavigationService
 {
     ViewModelBase? CurrentView { get; }

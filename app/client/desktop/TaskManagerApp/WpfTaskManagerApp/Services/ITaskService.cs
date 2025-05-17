@@ -1,6 +1,7 @@
 ﻿using WpfTaskManagerApp.Models;
 using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
 namespace WpfTaskManagerApp.Services;
+// --- Task Service ---
 public interface ITaskService
 {
     Task<IEnumerable<TaskItem>> GetAllTasksAsync(string? searchTerm = null, TaskStatus? status = null, bool includeInactive = false);

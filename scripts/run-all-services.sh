@@ -53,7 +53,9 @@ cd ./scripts
 ./kill-port.sh 6000 &
 ./kill-port.sh 6001 &
 ./kill-port.sh 6002 &
-./kill-port.sh 6003
+./kill-port.sh 6003 &
+./kill-port.sh 7000
+
 
 cd "$project_root"
 
@@ -77,7 +79,9 @@ run_services() {
   run_service 5000 "./app/server/ApiGateway/src/ApiGateway" "$LIGHT_GREEN" "ApiGateway" &
   run_service 5001 "./app/server/IdentityService/src/IdentityService.API" "$LIGHT_PURPLE" "Identity" &
   run_service 5002 "./app/server/UserService/src/UserService.API" "$LIGHT_BLUE" "User" &
-  run_service 5003 "./app/server/TaskService/src/TaskService.API" "$YELLOW" "Task"
+  run_service 5003 "./app/server/TaskService/src/TaskService.API" "$YELLOW" "Task" &
+  run_service 7000 "./app/server/SignalRService/src/SignalRHub" "$LIGHT_CYAN" "SignalR" 
+
 }
 
 test_services() {

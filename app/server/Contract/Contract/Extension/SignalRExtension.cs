@@ -2,7 +2,6 @@
 using Contract.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 
 namespace Contract.Extension;
 
@@ -32,7 +31,7 @@ public static class SignalRExtension
         }
         catch (Exception ex)
         {
-            Log.Error($"Error connecting to SignalR: {ex.Message}");
+            Console.WriteLine($"Error connecting to SignalR: {ex.Message}");
         }
         return app;
     }

@@ -1,37 +1,70 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using WpfTaskManagerApp.Core;
 
 namespace WpfTaskManagerApp.Models;
-public class User
+public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
 {
-    [JsonPropertyName("id")]
-    public Guid Id { get; set; }
-    [JsonPropertyName("username")]
-    public string Username { get; set; } = string.Empty;
-    [JsonPropertyName("email")]
-    public string Email { get; set; } = string.Empty;
+    private Guid _id;
+    public Guid Id
+    {
+        get => _id;
+        set => SetProperty(ref _id, value);
+    }
 
-    // PasswordHash không nên được client quản lý hoặc gửi đi dưới dạng này trong hầu hết các trường hợp.
-    // API sẽ xử lý việc hash và lưu trữ mật khẩu.
-    // Client chỉ gửi mật khẩu dạng plain text khi tạo user hoặc đổi mật khẩu.
-    [JsonIgnore] // Không serialize/deserialize trực tiếp từ/đến API trừ khi API có mục đích đặc biệt
-    public string? PasswordHash { get; set; }
-    [JsonPropertyName("role")]
+    private string _username = string.Empty;
+    public string Username
+    {
+        get => _username;
+        set => SetProperty(ref _username, value);
+    }
 
-    public UserRole Role { get; set; }
-    [JsonPropertyName("fullName")]
-    public string FullName { get; set; } = string.Empty;
-    [JsonPropertyName("address")]
-    public string? Address { get; set; }
-    [JsonPropertyName("isActive")]
-    public bool IsActive { get; set; } = true;
+    private string _email = string.Empty;
+    public string Email
+    {
+        get => _email;
+        set => SetProperty(ref _email, value);
+    }
 
-    // Constructor không tham số cần thiết cho deserialization JSON
+    [JsonIgnore]
+    public string? PasswordHash { get; set; } // Không cần PropertyChanged cho cái này ở client
+
+    private UserRole _role;
+    public UserRole Role
+    {
+        get => _role;
+        set => SetProperty(ref _role, value);
+    }
+
+    private string _fullName = string.Empty;
+    public string FullName
+    {
+        get => _fullName;
+        set => SetProperty(ref _fullName, value);
+    }
+
+    private string? _address;
+    public string? Address
+    {
+        get => _address;
+        set => SetProperty(ref _address, value);
+    }
+
+    private bool _isActive = true;
+    public bool IsActive
+    {
+        get => _isActive;
+        set => SetProperty(ref _isActive, value);
+    }
+
+    // Các thuộc tính không hiển thị, không cần INotifyPropertyChanged nếu không bind trực tiếp
+    // public DateTime CreatedAt { get; set; } 
+    // public DateTime UpdatedAt { get; set; }
+
     public User() { }
 
-    // Constructor cho việc tạo User trong code client (ví dụ, dữ liệu mẫu hoặc khi tạo mới trước khi gửi API)
-    // Mật khẩu plain text sẽ được xử lý riêng khi gửi đến API, không lưu trong PasswordHash ở client.
-    public User(Guid id, string username, string email, /* string plainPassword (not stored directly), */ UserRole role, string fullName, string? address = null, bool isActive = true)
+    public User(Guid id, string username, string email, UserRole role, string fullName, string? address = null, bool isActive = true)
     {
         Id = id;
         Username = username;
@@ -40,6 +73,19 @@ public class User
         FullName = fullName;
         Address = address;
         IsActive = isActive;
-        // PasswordHash sẽ được set bởi backend.
+    }
+
+    // INotifyPropertyChanged implementation
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

@@ -130,7 +130,7 @@ public class UserController : ControllerBase
             Address = updateUserRequest.Address,
             Fullname = updateUserRequest.FullName,
             Email = updateUserRequest.Email,
-            Username = updateUserRequest.,
+            Username = updateUserRequest.Username,
             IsActive = null,
         });
 

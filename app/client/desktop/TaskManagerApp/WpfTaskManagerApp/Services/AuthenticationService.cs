@@ -89,20 +89,24 @@ public class ApiAuthenticationService : IAuthenticationService
         _currentUser = null;
         _tokenProvider.ClearToken();
         // Debug.WriteLine("User logged out.");
+        // Consider calling API logout if your identity server supports it
+        // await _httpClient.PostAsync($"{ApiConfig.BaseUrl}/{ApiConfig.AuthEndPoint}/logout", null);
         return Task.CompletedTask;
     }
 
     public async Task<bool> IsUserAuthenticatedAsync()
     {
+        await Task.Delay(1); // Simulate async work
         string? token = _tokenProvider.GetToken();
         if (!string.IsNullOrEmpty(token) && _currentUser == null)
         {
+            // This logic might be enhanced to re-fetch user details if a token exists but _currentUser is null (e.g., app restart)
+            // For now, it relies on _currentUser being populated during LoginAsync or a previous session.
             // Debug.WriteLine("ApiAuthenticationService.IsUserAuthenticatedAsync: Token exists, but CurrentUser is null. Re-validation logic might be needed here.");
         }
-        return !string.IsNullOrEmpty(_tokenProvider.GetToken()) && _currentUser != null;
+        return !string.IsNullOrEmpty(token) && _currentUser != null;
     }
 
-    // ***** TRIỂN KHAI ChangePasswordAsync TRẢ VỀ bool *****
     public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordModel changePasswordModel)
     {
         var token = _tokenProvider.GetToken();
@@ -115,15 +119,13 @@ public class ApiAuthenticationService : IAuthenticationService
 
         try
         {
-            Debug.WriteLine($"ChangePasswordAsync API error: {changePasswordModel.CurrentPassword} - {changePasswordModel.NewPassword}");
-
+            // Assuming the endpoint for changing password is under the AuthEndPoint
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.AuthEndPoint}/change-password", changePasswordModel, _jsonSerializerOptions);
 
             if (!response.IsSuccessStatusCode)
             {
                 string errorContent = await response.Content.ReadAsStringAsync();
                 Debug.WriteLine($"ChangePasswordAsync API error: {response.StatusCode} - {errorContent}");
-                // Bạn có thể log lỗi chi tiết ở đây, nhưng không trả về cho ViewModel
             }
             return response.IsSuccessStatusCode;
         }

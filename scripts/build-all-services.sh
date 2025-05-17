@@ -24,4 +24,5 @@ dotnet publish --packages "$project_root/data/nuget" -o ./app/server/Contract/Co
 build_service "./app/server/Contract/Contract" "contract" &&
 build_service "./app/server/IdentityService/src/IdentityService.API" "identity" &&
 build_service "./app/server/UserService/src/UserService.API" "user" &&
-build_service "./app/server/TaskService/src/TaskService.API" "task"
+build_service "./app/server/TaskService/src/TaskService.API" "task" &&
+build_service "./app/server/SignalRService/src/SignalRHub" "signalr"

@@ -1,5 +1,6 @@
 ﻿using WpfTaskManagerApp.Models;
 namespace WpfTaskManagerApp.Services;
+// --- Authentication Service ---
 public interface IAuthenticationService
 {
     Task<User?> LoginAsync(string username, string password);

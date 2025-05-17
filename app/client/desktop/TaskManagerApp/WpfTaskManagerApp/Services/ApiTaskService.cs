@@ -33,10 +33,7 @@ public class ApiTaskService : ITaskService
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-        else
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-        }
+        else { _httpClient.DefaultRequestHeaders.Authorization = null; }
         await Task.CompletedTask;
     }
 
@@ -45,7 +42,7 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
-        if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}"); // Ensure enum is string
+        if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}");
         if (includeInactive) queryParams.Add("includeInactive=true");
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
@@ -102,7 +99,6 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            // Đảm bảo AssigneeId là Guid? và các trường khác đúng kiểu
             var taskToAdd = new { task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}", taskToAdd, _jsonSerializerOptions);
             if (response.IsSuccessStatusCode)
@@ -144,7 +140,7 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var statusUpdate = new { Status = newStatus.ToString() }; // Gửi enum dưới dạng string
+            var statusUpdate = new { Status = newStatus.ToString() };
             HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/{taskId}/status", statusUpdate, _jsonSerializerOptions);
             return response.IsSuccessStatusCode;
         }
