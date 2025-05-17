@@ -3,6 +3,7 @@
     "Setup back-end": "./scripts/setup-backend.sh",
     "Run all services": "./scripts/run-all-services.sh",
     "Build all services": "./scripts/build-all-services.sh",
-    "Apply all migrations": "./scripts/apply-all-migrations.sh"
+    "Apply all migrations": "./scripts/apply-all-migrations.sh",
+    "Drop all postgres databases": "./scripts/drop-all-postgres-databases.sh"
   }
 }

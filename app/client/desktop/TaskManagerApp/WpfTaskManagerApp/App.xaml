@@ -17,6 +17,7 @@
             <converters:BooleanToStringConverter x:Key="BooleanToStringConverter"/>
             <converters:BooleanToStatusConverter x:Key="BooleanToStatusConverter"/>
             <converters:StatusToBrushConverter x:Key="StatusToBrushConverter"/>
+            <converters:TaskStatusToBrushConverter x:Key="TaskStatusToBrushConverter"/>
 
             <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
                 <views:LoginView/>
@@ -25,6 +26,9 @@
                 <views:ProfileView/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type viewModels:StaffManagementViewModel}">
+                <views:StaffManagementView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModels:TaskManagementViewModel}">
                 <views:StaffManagementView/>
             </DataTemplate>
 

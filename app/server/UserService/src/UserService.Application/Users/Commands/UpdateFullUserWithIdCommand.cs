@@ -53,9 +53,8 @@ public class UpdateFullUserWithIdCommandHandler : IRequestHandler<UpdateFullUser
                 user.FullName = request.Fullname;
             }
 
-            if (request.IsActive.HasValue || !string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.Password) || !string.IsNullOrEmpty(request.Username))
+            if (request.IsActive.HasValue || !string.IsNullOrEmpty(request.Email) || !string.IsNullOrEmpty(request.Password) || !string.IsNullOrEmpty(request.Username))
             {
-
                 var response = await _grpcIdentityClient.UpdateAccountAsync(new GrpcUpdateAccountRequest
                 {
                     Id = request.Id.ToString(),

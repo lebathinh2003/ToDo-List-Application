@@ -40,7 +40,7 @@ public class GetAccountDetailQueryHandler : IRequestHandler<UpdateAccountCommand
                 return Result.Failure(AccountError.NullParameters, "Email and IsActive are null or empty.");
             }
 
-            if (!string.IsNullOrEmpty(request.IsActive) && (request.IsActive != "true" && request.IsActive != "false"))
+            if (!string.IsNullOrEmpty(request.IsActive) && (request.IsActive.ToLower() != "true" && request.IsActive.ToLower() != "false"))
             {
                 return Result.Failure(AccountError.InvalidParameters, "IsActive must be 'true' or 'false'.");
             }
@@ -80,7 +80,8 @@ public class GetAccountDetailQueryHandler : IRequestHandler<UpdateAccountCommand
 
             if (!string.IsNullOrEmpty(request.IsActive))
             {
-                account.IsActive = request.IsActive == "true";
+                account.IsActive = request.IsActive.ToLower() == "true";
+                Console.WriteLine("Update user isactive to:"+account.IsActive);
             }
 
             await _userManager.UpdateAsync(account);

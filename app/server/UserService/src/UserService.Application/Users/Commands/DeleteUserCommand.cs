@@ -1,10 +1,12 @@
 ﻿using Contract.Common;
 using Contract.Event.UserEvent;
 using Contract.Interfaces;
+using IdentityProto;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using UserService.Domain.Errors;
 using UserService.Domain.Interfaces;
+using static IdentityProto.GrpcIdentity;
 namespace UserService.Application.Users.Commands;
 public record DeleteUserCommand : IRequest<Result>
 {
@@ -15,11 +17,13 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
 {
     private readonly IApplicationDbContext _context;
     private readonly IServiceBus _serviceBus;
+    private readonly GrpcIdentity.GrpcIdentityClient _grpcIdentityClient;
 
-    public DeleteUserCommandHandler(IApplicationDbContext context, IServiceBus serviceBus)
+    public DeleteUserCommandHandler(IApplicationDbContext context, IServiceBus serviceBus, GrpcIdentityClient grpcIdentityClient)
     {
         _context = context;
         _serviceBus = serviceBus;
+        _grpcIdentityClient = grpcIdentityClient;
     }
 
     public async Task<Result> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
@@ -41,6 +45,21 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             if (user.IsActive == false)
             {
                 return Result.Failure(UserError.UserAlreadyInactive);
+            }
+
+            var response = await _grpcIdentityClient.UpdateAccountAsync(new GrpcUpdateAccountRequest
+            {
+                Id = user.Id.ToString(),
+                Email = "",
+                Password = "",
+                Username = "",
+                IsActive = false.ToString(),
+
+            }, cancellationToken: cancellationToken);
+
+            if (response == null || response.IsSuccess == false)
+            {
+                return Result.Failure(UserError.UpdateUserFail, "Update user isactive in identity service fail");
             }
 
             user.IsActive = false;

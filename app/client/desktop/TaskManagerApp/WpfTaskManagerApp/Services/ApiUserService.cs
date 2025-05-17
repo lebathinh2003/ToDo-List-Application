@@ -100,7 +100,7 @@ public class ApiUserService : IUserService
     public async Task<User?> AddUserAsync(User user, string password)
     {
         await SetAuthHeader();
-        var createUserRequest = new { user.Username, user.Email, Password = password, user.Role, user.FullName, user.Address, user.IsActive };
+        var createUserRequest = new { user.Username, user.Email, Password = password, user.FullName, user.Address, user.IsActive };
         try
         {
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}", createUserRequest, _jsonSerializerOptions);
@@ -111,20 +111,42 @@ public class ApiUserService : IUserService
         return null;
     }
 
-    public async Task<bool> AdminUpdateUserAsync(Guid userId, User userToUpdate)
+    public async Task<bool> AdminUpdateUserAsync(Guid userId, User userToUpdate, string? newPassword = null)
     {
         await SetAuthHeader();
-        var updateUserRequest = new
+        // Tạo payload động dựa trên việc newPassword có được cung cấp hay không
+        object updateUserPayload;
+        if (!string.IsNullOrWhiteSpace(newPassword))
         {
-            userToUpdate.FullName,
-            userToUpdate.Email,
-            userToUpdate.Address,
-            userToUpdate.IsActive
-            // Username, Role, Password không được cập nhật bởi admin qua endpoint này
-        };
+            updateUserPayload = new
+            {
+                userToUpdate.FullName,
+                userToUpdate.Email,
+                userToUpdate.Username,
+                userToUpdate.Address,
+                userToUpdate.IsActive,
+                Password = newPassword // API backend cần hỗ trợ nhận trường Password tùy chọn
+            };
+        }
+        else
+        {
+            updateUserPayload = new
+            {
+                userToUpdate.FullName,
+                userToUpdate.Email,
+                userToUpdate.Username,
+                userToUpdate.Address,
+                userToUpdate.IsActive
+            };
+        }
+
         try
         {
-            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{userId}", updateUserRequest, _jsonSerializerOptions);
+            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{userId}", updateUserPayload, _jsonSerializerOptions);
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"AdminUpdateUserAsync API error for {userId}: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+            }
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex) { Debug.WriteLine($"AdminUpdateUserAsync error for {userId}: {ex.Message}"); }

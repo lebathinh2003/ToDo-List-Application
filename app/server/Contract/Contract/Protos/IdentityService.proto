@@ -7,6 +7,7 @@ package IdentityProto;
 service GrpcIdentity {
     rpc GetAccountDetail (GrpcIdRequest) returns (GrpcAccountDetailDTO);
     rpc GetSimpleAccounts (GrpcIdsSetRequest) returns (GrpcListSimpleAccountsDTO);
+    rpc CreateAccount (GrpcCreateAccountRequest) returns (GrpcAccountDetailDTO);
     rpc UpdateAccount (GrpcUpdateAccountRequest) returns (GrpcStatusResponse);
 }
 
@@ -26,6 +27,14 @@ message GrpcUpdateAccountRequest {
     string Username = 3;
     string Password = 4;
     string IsActive = 5;
+}
+
+message GrpcCreateAccountRequest {
+    string Id = 1;
+    string Email =2;
+    string Username = 3;
+    string Password = 4;
+    bool IsActive = 5;
 }
 
 message GrpcSimpleAccountDTO {

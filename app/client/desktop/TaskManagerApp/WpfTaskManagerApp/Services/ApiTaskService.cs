@@ -37,46 +37,75 @@ public class ApiTaskService : ITaskService
         await Task.CompletedTask;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllTasksAsync(string? searchTerm = null, TaskStatus? status = null, bool includeInactive = false)
+    // ***** CẬP NHẬT TRIỂN KHAI GetAllTasksAsync *****
+    public async Task<PaginatedResult<TaskItem>?> GetAllTasksAsync(
+        int skip = 0,
+        int limit = 10,
+        string? sortBy = null,
+        string? sortOrder = "asc",
+        string? keyword = null,
+        TaskStatus? status = null,
+        bool includeInactive = false)
     {
         await SetAuthHeader();
-        var queryParams = new List<string>();
-        if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+        var queryParams = new List<string> { $"skip={skip}", $"limit={limit}" };
+        if (!string.IsNullOrWhiteSpace(sortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+        if (!string.IsNullOrWhiteSpace(sortOrder)) queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
+        if (!string.IsNullOrWhiteSpace(keyword)) queryParams.Add($"keyword={Uri.EscapeDataString(keyword)}");
         if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}");
         if (includeInactive) queryParams.Add("includeInactive=true");
+
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
+
+        Debug.WriteLine($"ApiTaskService.GetAllTasksAsync: Requesting URL: {requestUri}");
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<List<TaskItem>>(_jsonSerializerOptions) ?? new List<TaskItem>();
+                return await response.Content.ReadFromJsonAsync<PaginatedResult<TaskItem>>(_jsonSerializerOptions);
             }
+            Debug.WriteLine($"Error fetching all tasks: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex) { Debug.WriteLine($"GetAllTasksAsync error: {ex.Message}"); }
-        return new List<TaskItem>();
+        return null;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetTasksByAssigneeAsync(Guid assigneeId, string? searchTerm = null, TaskStatus? status = null, bool includeInactive = false)
+    // ***** CẬP NHẬT TRIỂN KHAI GetTasksByAssigneeAsync *****
+    public async Task<PaginatedResult<TaskItem>?> GetTasksByAssigneeAsync(
+        Guid assigneeId,
+        int skip = 0,
+        int limit = 10,
+        string? sortBy = null,
+        string? sortOrder = "asc",
+        string? keyword = null,
+        TaskStatus? status = null,
+        bool includeInactive = false)
     {
         await SetAuthHeader();
-        var queryParams = new List<string>();
-        if (!string.IsNullOrWhiteSpace(searchTerm)) queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+        var queryParams = new List<string> { $"skip={skip}", $"limit={limit}" };
+        if (!string.IsNullOrWhiteSpace(sortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+        if (!string.IsNullOrWhiteSpace(sortOrder)) queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
+        if (!string.IsNullOrWhiteSpace(keyword)) queryParams.Add($"keyword={Uri.EscapeDataString(keyword)}");
         if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}");
-        if (includeInactive) queryParams.Add("includeInactive=true");
+        if (includeInactive) queryParams.Add("includeInactive=true"); // API cần hỗ trợ includeInactive cho tasks của assignee
+
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/assignee/{assigneeId}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
+
+        Debug.WriteLine($"ApiTaskService.GetTasksByAssigneeAsync: Requesting URL: {requestUri}");
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<List<TaskItem>>(_jsonSerializerOptions) ?? new List<TaskItem>();
+                return await response.Content.ReadFromJsonAsync<PaginatedResult<TaskItem>>(_jsonSerializerOptions);
             }
+            Debug.WriteLine($"Error fetching tasks for assignee {assigneeId}: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex) { Debug.WriteLine($"GetTasksByAssigneeAsync error: {ex.Message}"); }
-        return new List<TaskItem>();
+        return null;
     }
 
     public async Task<TaskItem?> GetTaskByIdAsync(Guid taskId)

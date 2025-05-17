@@ -22,7 +22,7 @@ public class UserController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpPost]
-    public async Task<IActionResult> CreateUser([FromQuery] CreateUserRequest createUserRequest)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest createUserRequest)
     {
         var result = await _sender.Send(new CreateUserCommand
         {
@@ -31,6 +31,7 @@ public class UserController : ControllerBase
             Password = createUserRequest.Password,
             Fullname = createUserRequest.FullName,
             Address = createUserRequest.Address,
+            IsActive = createUserRequest.IsActive,
         });
         result.ThrowIfFailure();
         return Ok(result.Value);
@@ -78,7 +79,7 @@ public class UserController : ControllerBase
     }
 
     //[Authorize(Roles = "Admin")]
-    [HttpGet]
+    [HttpGet("testhu")]
     public async Task<IActionResult> AdminGetUsers([FromQuery] PaginatedDTO paginatedDTO)
     {
         var result = await _sender.Send(new GetFullUserQuery
@@ -118,7 +119,7 @@ public class UserController : ControllerBase
     [HttpPut("id/{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest updateUserRequest)
     {
-
+        Console.WriteLine("Passworddddddddđ:" + updateUserRequest.Password);
         if (id == Guid.Empty)
         {
             return BadRequest("Id is null.");
@@ -131,7 +132,8 @@ public class UserController : ControllerBase
             Fullname = updateUserRequest.FullName,
             Email = updateUserRequest.Email,
             Username = updateUserRequest.Username,
-            IsActive = null,
+            Password = updateUserRequest.Password,
+            IsActive = updateUserRequest.IsActive,
         });
 
         result.ThrowIfFailure();

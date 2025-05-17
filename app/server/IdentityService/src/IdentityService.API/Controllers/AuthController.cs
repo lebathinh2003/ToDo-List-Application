@@ -61,6 +61,10 @@ public class AuthController : ControllerBase
 
         if (user == null) return Unauthorized("Invalid credentials");
 
+        Console.WriteLine("User isactive:"+user.IsActive);
+
+        if(!user.IsActive) return Unauthorized("User is not active");
+
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
         if (!result.Succeeded) return Unauthorized("Invalid credentials");
 

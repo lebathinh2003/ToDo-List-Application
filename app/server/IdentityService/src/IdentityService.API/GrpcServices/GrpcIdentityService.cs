@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf.Collections;
 using Grpc.Core;
 using IdentityProto;
+using IdentityService.Application.AccountDTOs.Commands;
 using IdentityService.Application.ApplicationUsers.Commands;
 using IdentityService.Application.ApplicationUsers.Queries;
 using MediatR;
@@ -9,12 +10,10 @@ namespace IdentityService.API.GrpcServices;
 public class GrpcIdentityService : GrpcIdentity.GrpcIdentityBase
 {
     private readonly ISender _sender;
-
     public GrpcIdentityService(ISender sender)
     {
         _sender = sender;
     }
-
     public override async Task<GrpcListSimpleAccountsDTO> GetSimpleAccounts(GrpcIdsSetRequest request, ServerCallContext context)
     {
         if (request.Ids == null || request.Ids.Count == 0)
@@ -72,7 +71,6 @@ public class GrpcIdentityService : GrpcIdentity.GrpcIdentityBase
             Role = response.Value.Role ?? "",
         };
     }
-
     public override async Task<GrpcStatusResponse> UpdateAccount(GrpcUpdateAccountRequest request, ServerCallContext context)
     {
         if (string.IsNullOrEmpty(request.Id))
@@ -85,9 +83,33 @@ public class GrpcIdentityService : GrpcIdentity.GrpcIdentityBase
             Id = Guid.Parse(request.Id),
             Email = request.Email,
             Username = request.Username,
+            Password = request.Password,
             IsActive = request.IsActive,
         });
         response.ThrowIfFailure();
         return new GrpcStatusResponse{ IsSuccess = true};
+    }
+    public override async Task<GrpcAccountDetailDTO> CreateAccount(GrpcCreateAccountRequest request, ServerCallContext context)
+    {
+        if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.Id))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Id, Email, Username and Password must not be null or empty."));
+        }
+        var response = await _sender.Send(new CreateStaffAccountCommand
+        {
+            Id = Guid.Parse(request.Id),
+            Email = request.Email,
+            Username = request.Username,
+            Password = request.Password,
+            IsActive = request.IsActive,
+        });
+        response.ThrowIfFailure();
+        return new GrpcAccountDetailDTO
+        {
+            Id = response.Value!.Id.ToString() ?? "",
+            Email = response.Value.Email ?? "",
+            Username = response.Value.Username ?? "",
+            Role = response.Value.Role ?? ""
+        };
     }
 }

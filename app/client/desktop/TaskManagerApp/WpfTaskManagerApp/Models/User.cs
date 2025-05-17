@@ -7,6 +7,7 @@ namespace WpfTaskManagerApp.Models;
 public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
 {
     private Guid _id;
+
     public Guid Id
     {
         get => _id;
@@ -27,7 +28,6 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
         set => SetProperty(ref _email, value);
     }
 
-    [JsonIgnore]
     public string? PasswordHash { get; set; } // Không cần PropertyChanged cho cái này ở client
 
     private UserRole _role;
