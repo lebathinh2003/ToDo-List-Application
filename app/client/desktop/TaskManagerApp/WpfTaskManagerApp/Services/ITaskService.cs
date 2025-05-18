@@ -1,4 +1,5 @@
-﻿using WpfTaskManagerApp.Models;
+﻿using WpfTaskManagerApp.Core;
+using WpfTaskManagerApp.Models;
 using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
 namespace WpfTaskManagerApp.Services;
 public interface ITaskService
@@ -10,7 +11,7 @@ public interface ITaskService
         string? sortBy = null,
         string? sortOrder = null,
         string? keyword = null,
-        TaskStatus? status = null, // Thêm filter theo status
+        TaskStatusItem? status = null, // Thêm filter theo status
         bool includeInactive = false);
 
     Task<PaginatedResult<TaskItem>?> GetTasksByAssigneeAsync(
@@ -20,7 +21,7 @@ public interface ITaskService
         string? sortBy = null,
         string? sortOrder = null,
         string? keyword = null,
-        TaskStatus? status = null, // Thêm filter theo status
+        TaskStatusItem? status = null, // Thêm filter theo status
         bool includeInactive = false);
     // ***** KẾT THÚC CẬP NHẬT SIGNATURE *****
 

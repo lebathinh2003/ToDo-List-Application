@@ -1,4 +1,6 @@
-﻿namespace TaskService.Application.DTOs;
+﻿using System.Text.Json.Serialization;
+
+namespace TaskService.Application.DTOs;
 public class TaskDTO
 {
     public Guid Id { get; set; }
@@ -8,7 +10,9 @@ public class TaskDTO
     public string AssigneeName { get; set; } = null!;
     public string AssigneeUsername { get; set; } = null!;
     public string Status { get; set; } = null!;
+    [JsonPropertyName("createdDate")]
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public DateTime? DueDate { get; set; }
     public bool IsActive { get; set; }
 }

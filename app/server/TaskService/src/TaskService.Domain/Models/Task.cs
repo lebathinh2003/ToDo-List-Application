@@ -18,12 +18,14 @@ public class Task
     public TaskStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public DateTime? DueDate { get; set; }
     [Required]
     public bool IsActive { get; set; }
 }
 public enum TaskStatus
 {
-    NotStarted,
+    ToDo,
     InProgress,
-    Completed,
+    Done,
+    Cancelled
 }

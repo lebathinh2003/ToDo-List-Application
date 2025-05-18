@@ -102,11 +102,6 @@
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <ContentPresenter Grid.Column="0" 
-                                                                      Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                                      ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                                      HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                                      Margin="10,0,0,0"/>
                                                     <Path Grid.Column="1" x:Name="Arrow" Data="M 0 0 L 4 4 L 8 0 Z" Fill="#555" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                                 </Grid>
                                             </Border>
@@ -125,6 +120,11 @@
                                         </ControlTemplate>
                                     </ToggleButton.Template>
                                 </ToggleButton>
+                                <TextBox x:Name="PART_EditableTextBox"
+                                         Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, UpdateSourceTrigger=PropertyChanged}"
+                                         HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5,0,25,0"
+                                         BorderThickness="0" Background="Transparent" IsHitTestVisible="True"
+                                         Focusable="True" Padding="5,0,0,0"/>
                                 <Popup Name="PART_Popup" AllowsTransparency="true" Focusable="false" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" PopupAnimation="Slide" Placement="Bottom">
                                     <Border Name="DropDownBorder" Background="White" BorderThickness="1" BorderBrush="#D1D5DB" CornerRadius="4" MaxHeight="{TemplateBinding MaxDropDownHeight}" MinWidth="{TemplateBinding ActualWidth}">
                                         <Border.Effect>
@@ -228,13 +228,33 @@
                          Margin="0,0,0,15"/>
 
                 <TextBlock Text="Assignee:" Style="{StaticResource DialogLabelStyle}"/>
-                <ComboBox ItemsSource="{Binding AssignableUsers}"
-                          SelectedItem="{Binding SelectedAssignee, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
-                          DisplayMemberPath="FullName" 
-                          SelectedValuePath="Id" 
+
+                <ComboBox ItemsSource="{Binding FilteredAssignableUsers}"
+                          SelectedItem="{Binding SelectedAssignee, Mode=TwoWay}"
+                          Text="{Binding AssigneeSearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                          IsEditable="True" 
+                          StaysOpenOnEdit="True" 
+                          IsTextSearchEnabled="False" 
                           Style="{StaticResource DialogComboBoxStyle}"
                           Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
-                          Margin="0,0,0,15"/>
+                          Margin="0,0,0,15">        
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="5,3"/>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding FullName}" FontWeight="Medium"/>
+                                <TextBlock Text=" (" Foreground="Gray" Margin="3,0,0,0"/>
+                                <TextBlock Text="{Binding Username}" Foreground="Gray"/>
+                                <TextBlock Text=")" Foreground="Gray"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
                 <TextBlock Text="Status:" Style="{StaticResource DialogLabelStyle}"/>
                 <ComboBox ItemsSource="{Binding AllTaskStatuses}" 

@@ -18,6 +18,7 @@
             <converters:BooleanToStatusConverter x:Key="BooleanToStatusConverter"/>
             <converters:StatusToBrushConverter x:Key="StatusToBrushConverter"/>
             <converters:TaskStatusToBrushConverter x:Key="TaskStatusToBrushConverter"/>
+            <converters:TaskStatusToStringConverter x:Key="TaskStatusToStringConverter"/>
 
             <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
                 <views:LoginView/>
@@ -29,7 +30,7 @@
                 <views:StaffManagementView/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type viewModels:TaskManagementViewModel}">
-                <views:StaffManagementView/>
+                <views:TaskManagementView/>
             </DataTemplate>
 
             <ControlTemplate x:Key="GlobalValidationErrorTemplate">

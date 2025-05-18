@@ -9,8 +9,10 @@ using System.ComponentModel.DataAnnotations;
 using TaskService.Application.DTOs;
 using TaskService.Domain.Errors;
 using TaskService.Domain.Interfaces;
+using TaskService.Domain.Models;
 using TaskService.Domain.Responses;
 using UserProto;
+using TaskStatus = TaskService.Domain.Models.TaskStatus;
 
 namespace TaskService.Application.Tasks.Queries;
 
@@ -18,6 +20,7 @@ public class GetFullTaskQuery : IRequest<Result<PaginatedGetFullTaskDTO?>>
 {
     [Required]
     public PaginatedDTO PaginatedDTO { get; init; } = null!;
+    public TaskStatus? Status { get; set; } = null!;
 }
 
 public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<PaginatedGetFullTaskDTO?>>
@@ -39,6 +42,9 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
     {
         try
         {
+
+            Console.WriteLine("Statusssssssss"+ request.Status);
+
             var paginatedDTO = request.PaginatedDTO;
 
             if (paginatedDTO.Skip == null)
@@ -47,6 +53,12 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
             }
 
             var taskQuery = _context.Tasks.AsQueryable();
+
+            if(request.Status != null)
+            {
+                taskQuery = taskQuery.Where(t => t.Status == request.Status);
+            }
+
             if (!string.IsNullOrEmpty(paginatedDTO.Keyword))
             {
                 var keyword = paginatedDTO.Keyword.ToLower();
@@ -73,6 +85,7 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
                 Status = t.Status.ToString(),
                 CreatedAt = t.CreatedAt,
                 UpdatedAt = t.UpdatedAt,
+                DueDate = t.DueDate,
                 IsActive = t.IsActive,
                 AssigneeName = "",
                 AssigneeUsername = "",

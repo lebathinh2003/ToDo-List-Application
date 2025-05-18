@@ -21,4 +21,9 @@ public partial class TaskManagementView : UserControl
             }
         }
     }
+
+    private void DataGrid_SelectionChanged()
+    {
+
+    }
 }

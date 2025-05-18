@@ -7,6 +7,7 @@ using WpfTaskManagerApp.Models;
 using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
 using System.Net.Http.Json;
 using WpfTaskManagerApp.Configs;
+using WpfTaskManagerApp.Core;
 
 namespace WpfTaskManagerApp.Services;
 public class ApiTaskService : ITaskService
@@ -44,7 +45,7 @@ public class ApiTaskService : ITaskService
         string? sortBy = null,
         string? sortOrder = "asc",
         string? keyword = null,
-        TaskStatus? status = null,
+        TaskStatusItem? status = null,
         bool includeInactive = false)
     {
         await SetAuthHeader();
@@ -52,7 +53,7 @@ public class ApiTaskService : ITaskService
         if (!string.IsNullOrWhiteSpace(sortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
         if (!string.IsNullOrWhiteSpace(sortOrder)) queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
         if (!string.IsNullOrWhiteSpace(keyword)) queryParams.Add($"keyword={Uri.EscapeDataString(keyword)}");
-        if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}");
+        if (status != null) queryParams.Add($"status={status.Status.ToString()}");
         if (includeInactive) queryParams.Add("includeInactive=true");
 
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}";
@@ -80,7 +81,7 @@ public class ApiTaskService : ITaskService
         string? sortBy = null,
         string? sortOrder = "asc",
         string? keyword = null,
-        TaskStatus? status = null,
+        TaskStatusItem? status = null,
         bool includeInactive = false)
     {
         await SetAuthHeader();
@@ -88,7 +89,7 @@ public class ApiTaskService : ITaskService
         if (!string.IsNullOrWhiteSpace(sortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
         if (!string.IsNullOrWhiteSpace(sortOrder)) queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
         if (!string.IsNullOrWhiteSpace(keyword)) queryParams.Add($"keyword={Uri.EscapeDataString(keyword)}");
-        if (status.HasValue) queryParams.Add($"status={status.Value.ToString()}");
+        if (status != null) queryParams.Add($"status={status.Status.ToString()}");
         if (includeInactive) queryParams.Add("includeInactive=true"); // API cần hỗ trợ includeInactive cho tasks của assignee
 
         string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/assignee/{assigneeId}";

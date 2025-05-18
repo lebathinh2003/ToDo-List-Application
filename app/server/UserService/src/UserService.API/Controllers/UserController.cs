@@ -79,7 +79,7 @@ public class UserController : ControllerBase
     }
 
     //[Authorize(Roles = "Admin")]
-    [HttpGet("testhu")]
+    [HttpGet]
     public async Task<IActionResult> AdminGetUsers([FromQuery] PaginatedDTO paginatedDTO)
     {
         var result = await _sender.Send(new GetFullUserQuery

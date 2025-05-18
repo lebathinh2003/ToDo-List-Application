@@ -1,13 +1,12 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Contract.DTOs;
+﻿using Contract.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskService.API.Requests;
 using TaskService.Application.Tasks.Commands;
 using TaskService.Application.Tasks.Queries;
-using Newtonsoft.Json;
-using System.Security.Claims;
+using TaskService.Domain.Models;
+using TaskStatus = TaskService.Domain.Models.TaskStatus;
 namespace TaskService.API.Controllers;
 
 [ApiController]
@@ -37,12 +36,13 @@ public class TasksController : ControllerBase
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpGet("get-tasks")]
-    public async Task<IActionResult> AdminGetTasks([FromQuery] PaginatedDTO paginatedDTO)
+    [HttpGet]
+    public async Task<IActionResult> AdminGetTasks([FromQuery] PaginatedDTO paginatedDTO, TaskStatus? status)
     {
         var result = await _sender.Send(new GetFullTaskQuery
         {
-            PaginatedDTO = paginatedDTO
+            PaginatedDTO = paginatedDTO,
+            Status = status,
         });
         result.ThrowIfFailure();
         return Ok(result.Value);

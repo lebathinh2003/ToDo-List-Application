@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,28 +61,46 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
     private string _searchTerm = string.Empty;
     public string SearchTerm { get => _searchTerm; set => SetProperty(ref _searchTerm, value); }
 
-    private TaskStatus? _selectedFilterStatus;
-    public TaskStatus? SelectedFilterStatus
+    private TaskStatusItem _selectedFilterStatus;
+    public TaskStatusItem SelectedFilterStatus
     {
         get => _selectedFilterStatus;
         set
         {
-            if (SetProperty(ref _selectedFilterStatus, value))
+            if (_selectedFilterStatus != value)
             {
+                _selectedFilterStatus = value;
+                OnPropertyChanged(nameof(SelectedFilterStatus));
                 CurrentPage = 1;
                 _ = LoadTasksAsync();
             }
         }
     }
-    public IEnumerable<TaskStatus?> AllTaskStatusesWithOptionalNone
+    private List<TaskStatusItem> _allTaskStatusItems;
+    public IEnumerable<TaskStatusItem> AllTaskStatusesWithOptionalNone
     {
         get
         {
-            yield return null;
-            foreach (TaskStatus status in Enum.GetValues(typeof(TaskStatus)))
+            if (_allTaskStatusItems == null)
             {
-                yield return status;
+                _allTaskStatusItems = new List<TaskStatusItem>();
+                var addStatus = new TaskStatusItem(null, "All");
+                _allTaskStatusItems.Add(addStatus);
+                _selectedFilterStatus = addStatus;
+                foreach (TaskStatus status in Enum.GetValues(typeof(TaskStatus)))
+                {
+                    var displayName = status switch
+                    {
+                        TaskStatus.ToDo => "To Do",
+                        TaskStatus.InProgress => "In Progress",
+                        TaskStatus.Done => "Done",
+                        TaskStatus.Cancelled => "Cancelled",
+                        _ => status.ToString(),
+                    };
+                    _allTaskStatusItems.Add(new TaskStatusItem(status, displayName));
+                }
             }
+            return _allTaskStatusItems;
         }
     }
 
@@ -249,8 +268,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         }
         var addEditTaskViewModel = _serviceProvider.GetRequiredService<AddEditTaskViewModel>();
 
-        await addEditTaskViewModel.LoadAssignableUsersAsync();
-
+        // Gọi initialize trước, để biết đang ở chế độ thêm hay sửa
         if (taskToEdit == null)
         {
             addEditTaskViewModel.InitializeForAdd();
@@ -259,6 +277,9 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         {
             addEditTaskViewModel.InitializeForEdit(taskToEdit);
         }
+
+        // Sau đó mới load danh sách người dùng có thể giao
+        await addEditTaskViewModel.LoadAssignableUsersAsync();
 
         var dialogView = new AddEditTaskDialog { DataContext = addEditTaskViewModel };
         var dialogWindow = new Window
@@ -284,6 +305,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         };
         dialogWindow.ShowDialog();
     }
+
 
     private async Task DeleteTaskAsync(TaskItem? taskToDelete)
     {

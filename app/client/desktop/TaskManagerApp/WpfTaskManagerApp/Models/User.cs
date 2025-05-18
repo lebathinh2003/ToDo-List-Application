@@ -88,4 +88,10 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
         OnPropertyChanged(propertyName);
         return true;
     }
+
+    //User for replace DisplayMemberPath when using ItemTemplate
+    public override string ToString()
+    {
+        return FullName;
+    }
 }

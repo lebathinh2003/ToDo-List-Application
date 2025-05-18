@@ -12,7 +12,7 @@ using TaskService.Infrastructure.Persistence;
 namespace TaskService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250513212334_Init")]
+    [Migration("20250518071604_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -41,6 +41,9 @@ namespace TaskService.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");

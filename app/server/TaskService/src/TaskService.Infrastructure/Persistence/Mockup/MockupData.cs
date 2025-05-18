@@ -31,12 +31,14 @@ public class MockupData
                 Title = seedTask.Title,
                 Description = seedTask.Description,
                 AssigneeId = seedTask.AssigneeId,
-                Status = Domain.Models.TaskStatus.NotStarted,
+                Status = seedTask.Status,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
+                DueDate = seedTask.DueDate,
                 IsActive = true
             };
             await _context.Tasks.AddAsync(task);
+            Console.WriteLine("Added task:" + task.Title);
         }
         await _context.Instance.SaveChangesAsync();
         Console.WriteLine("Done seed task...");

@@ -39,7 +39,10 @@ namespace WpfTaskManagerApp.ViewModels;
             _navigationService.CurrentViewChanged += OnCurrentViewChanged;
             NavigateToProfileCommand = new RelayCommand(_ => _navigationService.NavigateTo<ProfileViewModel>(), _ => IsLoggedIn);
             NavigateToStaffManagementCommand = new RelayCommand(_ => _navigationService.NavigateTo<StaffManagementViewModel>(), _ => IsLoggedIn && IsAdmin);
-            NavigateToTaskManagementCommand = new RelayCommand(_ => _navigationService.NavigateTo<TaskManagementViewModel>(), _ => IsLoggedIn);
+            NavigateToTaskManagementCommand = new RelayCommand(_ => {
+                _navigationService.NavigateTo<TaskManagementViewModel>();
+                Debug.WriteLine("MainViewModel: NavigateToTaskManagementCommand Executed.");
+            }, _ => IsLoggedIn);
             LogoutCommand = new RelayCommand(async _ => await Logout(), _ => IsLoggedIn);
             _ = InitializeAuthenticationStateAsync();
         }
@@ -57,10 +60,16 @@ namespace WpfTaskManagerApp.ViewModels;
             if (IsLoggedIn) { _ = _signalRService.ConnectAsync(); if (CurrentViewModel is LoginViewModel || CurrentViewModel == null) _navigationService.NavigateTo<ProfileViewModel>(); }
             else { _ = _signalRService.DisconnectAsync(); if (!(CurrentViewModel is LoginViewModel)) { var loginVM = GetViewModel<LoginViewModel>(); loginVM.LoginSuccessAction = OnLoginSuccess; _navigationService.NavigateTo<LoginViewModel>(); } }
         }
-        private void UpdateActiveViewStates() { IsProfileViewActive = CurrentViewModel is ProfileViewModel; IsStaffManagementViewActive = CurrentViewModel is StaffManagementViewModel; IsTaskManagementViewActive = CurrentViewModel is TaskManagementViewModel; }
+        private void UpdateActiveViewStates() { 
+        IsProfileViewActive = CurrentViewModel is ProfileViewModel;
+        IsStaffManagementViewActive = CurrentViewModel is StaffManagementViewModel; 
+        IsTaskManagementViewActive = CurrentViewModel is TaskManagementViewModel;
+        Debug.WriteLine($"MainViewModel.UpdateActiveViewStates: ProfileActive={IsProfileViewActive}, StaffActive={IsStaffManagementViewActive}, TaskActive={IsTaskManagementViewActive}. CurrentViewModel is {CurrentViewModel?.GetType().Name}");
+    }
         private void OnCurrentViewChanged()
         {
-            CurrentViewModel = _navigationService.CurrentView; 
+        Debug.WriteLine($"MainViewModel.OnCurrentViewChanged: NavigationService.CurrentView is now '{_navigationService.CurrentView?.GetType().FullName ?? "null"}'");
+        CurrentViewModel = _navigationService.CurrentView; 
             if (CurrentViewModel is LoginViewModel loginVMInstance && loginVMInstance.LoginSuccessAction == null) { loginVMInstance.LoginSuccessAction = OnLoginSuccess; }
             (NavigateToProfileCommand as RelayCommand)?.RaiseCanExecuteChanged(); (NavigateToStaffManagementCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (NavigateToTaskManagementCommand as RelayCommand)?.RaiseCanExecuteChanged(); (LogoutCommand as RelayCommand)?.RaiseCanExecuteChanged();
