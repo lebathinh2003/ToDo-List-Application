@@ -46,7 +46,7 @@ public class GetFullUserQueryHandler : IRequestHandler<GetFullUserQuery, Result<
                 return Result<PaginatedGetFullUserDTO?>.Failure(UserError.NullParameters, "Skip is null");
             }
 
-            var userQuery = _context.Users.AsQueryable();
+            var userQuery = _context.Users.Where(u => !u.IsAdmin).AsQueryable();
 
             if(paginatedDTO.IncludeInactive != null && paginatedDTO.IncludeInactive.Value == false)
             {

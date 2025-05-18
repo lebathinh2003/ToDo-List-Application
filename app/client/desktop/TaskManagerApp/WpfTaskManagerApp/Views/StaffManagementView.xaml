@@ -94,7 +94,10 @@
             <Style TargetType="Button" x:Key="RestoreDataGridButtonStyle" BasedOn="{StaticResource DataGridActionButtonStyle}">
                 <Setter Property="Background" Value="#27AE60"/>
             </Style>
-
+            <Style TargetType="Button" x:Key="AssignTaskDataGridButtonStyle" BasedOn="{StaticResource DataGridActionButtonStyle}">
+                <Setter Property="Background" Value="#5DADE2"/>
+                <Setter Property="MinWidth" Value="80"/>
+            </Style>
             <Style TargetType="Button" x:Key="PanelActionButtonStyle" BasedOn="{StaticResource BaseActionButtonStyle}">
                 <Setter Property="Padding" Value="12,7"/>
                 <Setter Property="MinWidth" Value="90"/>
@@ -107,7 +110,6 @@
             <Style TargetType="Button" x:Key="SecondaryPanelActionButtonStyle" BasedOn="{StaticResource PanelActionButtonStyle}">
                 <Setter Property="Background" Value="#95A5A6"/>
             </Style>
-
 
             <Style TargetType="TextBox" x:Key="SearchTextBoxStyle">
                 <Setter Property="Padding" Value="10,7"/>
@@ -203,6 +205,7 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+
             <Style TargetType="DataGrid">
                 <Setter Property="AutoGenerateColumns" Value="False"/>
                 <Setter Property="CanUserAddRows" Value="False"/>
@@ -304,7 +307,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#4B5563" FontWeight="Medium"/>
                     <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource SearchTextBoxStyle}" KeyDown="SearchTextBox_KeyDown"
+                             Style="{StaticResource SearchTextBoxStyle}"
                              Width="220"/>
                     <Button Content="Search" Command="{Binding SearchCommand}" Style="{StaticResource SecondaryPanelActionButtonStyle}" Margin="8,0,0,0" Padding="10,5"/>
                 </StackPanel>
@@ -326,8 +329,7 @@
                 <Button Grid.Column="4" Content="Add New Staff" 
                         Command="{Binding AddStaffCommand}" 
                         Style="{StaticResource PrimaryPanelActionButtonStyle}"
-                        IsEnabled="{Binding AddStaffCommand.CanExecute}"
-                        Margin="10,0,0,0" Click="Button_Click"/>
+                        Margin="10,0,0,0"/>
             </Grid>
         </Border>
 
@@ -337,12 +339,13 @@
                   CanUserSortColumns="False"  
                   HeadersVisibility="Column">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto" MinWidth="260" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="150" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="2*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Address" Binding="{Binding Address}" Width="2*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="120" IsReadOnly="True"/>
-                <DataGridTemplateColumn Header="Status" Width="110" IsReadOnly="True">
+
+                <DataGridTemplateColumn Header="Status" Width="100" MinWidth="100" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Border Padding="8,6" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="70"
@@ -354,7 +357,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="Actions" Width="Auto" MinWidth="190">
+                <DataGridTemplateColumn Header="Actions" Width="240" MinWidth="240">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -374,6 +377,12 @@
                                         CommandParameter="{Binding}"
                                         Style="{StaticResource RestoreDataGridButtonStyle}"
                                         Visibility="{Binding IsActive, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}"/>
+
+                                <Button Content="Assign Task"
+                                        Command="{Binding DataContext.AssignTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource AssignTaskDataGridButtonStyle}"
+                                        IsEnabled="{Binding IsActive}"/>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -417,6 +426,5 @@
         <ProgressBar Grid.Row="1" Grid.RowSpan="3" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Margin="0,5,0,0"
                      Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"
                      Panel.ZIndex="1"/>
-
     </Grid>
 </UserControl>
