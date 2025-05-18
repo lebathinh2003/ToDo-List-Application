@@ -10,10 +10,14 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewModels:ProfileViewModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="700" d:DesignWidth="1100" Background="#F7F7F7">
+
     <UserControl.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-            </ResourceDictionary.MergedDictionaries>
+            <!-- Gradient Brush for Banner -->
+            <LinearGradientBrush x:Key="BannerGradient" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#2B6CB0" Offset="0"/>
+                <GradientStop Color="#4299E1" Offset="1"/>
+            </LinearGradientBrush>
 
             <ControlTemplate x:Key="ValidationErrorTemplate">
                 <StackPanel>
@@ -24,6 +28,7 @@
                 </StackPanel>
             </ControlTemplate>
 
+            <!-- Giữ nguyên tất cả các style gốc -->
             <Style TargetType="GroupBox">
                 <Setter Property="Padding" Value="20"/>
                 <Setter Property="Margin" Value="0,0,0,20"/>
@@ -218,8 +223,54 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="20">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10">
-            <TextBlock Text="My Profile" FontSize="28" FontWeight="Bold" HorizontalAlignment="Left" Margin="0,0,0,25" Foreground="#1A202C"/>
+            <!-- Banner Section -->
+            <Border Background="{StaticResource BannerGradient}" 
+                    CornerRadius="8" 
+                    Margin="0,0,0,25"
+                    Padding="30,25"
+                    Height="100">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
+                    <!-- User Avatar -->
+                    <Border Grid.Column="0" 
+                            Width="50" 
+                            Height="50" 
+                            CornerRadius="40"
+                            Background="{StaticResource BannerGradient}"
+                            BorderBrush="White"
+                            BorderThickness="2"
+                            VerticalAlignment="Center">
+                        <Viewbox>
+                            <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" 
+                                  Fill="White" Stretch="Uniform"/>
+                        </Viewbox>
+                    </Border>
+
+                    <!-- User Info -->
+                    <StackPanel Grid.Column="1" 
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding FullName}" 
+                                   Foreground="White"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
+                        <TextBlock Text="Welcome to your profile"
+                                   Foreground="#EBF8FF"
+                                   FontSize="16"
+                                   FontWeight="Medium"/>
+                    </StackPanel>
+
+                    
+                </Grid>
+            </Border>
+
+            <!-- Original Content -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -227,6 +278,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
+                <!-- Account Information Section -->
                 <GroupBox Grid.Column="0" Header="Account Information" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Username" Style="{StaticResource LabelStyle}"/>
@@ -257,6 +309,7 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!-- Security Section -->
                 <GroupBox Grid.Column="2" Header="Security" VerticalAlignment="Top">
                     <StackPanel>
                         <Button Content="{Binding IsPasswordChangeVisible, Converter={StaticResource BooleanToStringConverter}, ConverterParameter='Hide Password Section|Change Password'}" 
@@ -299,13 +352,17 @@
                     </StackPanel>
                 </GroupBox>
             </Grid>
+
+            <!-- Message and Progress Bars -->
             <TextBlock Text="{Binding MessageFromToast, FallbackValue=''}" 
                        Style="{StaticResource MessageTextStyle}"
                        Foreground="{Binding MessageFromToast, Converter={StaticResource MessageToBrushConverter}, FallbackValue=Red}"
                        Visibility="{Binding MessageFromToast, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}"
                        Margin="0,20,0,5"/>
+
             <ProgressBar IsIndeterminate="True" Height="3" Margin="0,5,0,0" BorderThickness="0"
                          Visibility="{Binding IsUpdatingProfile, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
+
             <ProgressBar IsIndeterminate="True" Height="3" Margin="0,5,0,0" BorderThickness="0"
                          Visibility="{Binding IsChangingPassword, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
 
