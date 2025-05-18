@@ -1,14 +1,15 @@
 ﻿using Contract.Common;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using TaskService.Application.DTOs;
 using TaskService.Domain.Errors;
 using TaskService.Domain.Interfaces;
 using UserProto;
-using Task = TaskService.Domain.Models.Task;
 using TaskStatus = TaskService.Domain.Models.TaskStatus;
 namespace TaskService.Application.Tasks.Commands;
-public record CreateTaskCommand : IRequest<Result<TaskDTO?>>
+public record UpdateTaskCommand : IRequest<Result<TaskDTO?>>
 {
+    public Guid Id { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
     public Guid AssigneeId { get; set; }
@@ -17,22 +18,23 @@ public record CreateTaskCommand : IRequest<Result<TaskDTO?>>
     public DateTime? DueDate { get; set; } = null;
 }
 
-public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Result<TaskDTO?>>
+public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Result<TaskDTO?>>
 {
     private readonly IApplicationDbContext _context;
     private readonly GrpcUser.GrpcUserClient _grpcUserClient;
 
-    public CreateTaskCommandHandler(IApplicationDbContext context, GrpcUser.GrpcUserClient grpcUserClient)
+    public UpdateTaskCommandHandler(IApplicationDbContext context, GrpcUser.GrpcUserClient grpcUserClient)
     {
         _context = context;
         _grpcUserClient = grpcUserClient;
     }
 
-    public async Task<Result<TaskDTO?>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
+    public async Task<Result<TaskDTO?>> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
     {
         try {
 
-            if(request.AssigneeId == Guid.Empty || 
+            if(request.Id == Guid.Empty ||
+                request.AssigneeId == Guid.Empty || 
                 string.IsNullOrEmpty(request.Title) ||
                 string.IsNullOrEmpty(request.Description) ||
                 string.IsNullOrEmpty(request.Status) ||
@@ -40,19 +42,21 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
             {
                 return Result<TaskDTO?>.Failure(TaskError.NullParameters, "Invalid input data");
             }
-                
-            var task = new Task
+              
+            var task = await _context.Tasks.SingleOrDefaultAsync(t => t.Id == request.Id, cancellationToken);
+
+            if (task == null)
             {
-                AssigneeId = request.AssigneeId,
-                Id = Guid.NewGuid(),
-                Title = request.Title,
-                Description = request.Description,
-                IsActive = request.IsActive,
-                Status = status,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                DueDate = request.DueDate,
-            };
+                return Result<TaskDTO?>.Failure(TaskError.NotFound, "Task not found");
+            }
+
+            task.AssigneeId = request.AssigneeId;
+            task.Title = request.Title;
+            task.Description = request.Description;
+            task.IsActive = request.IsActive;
+            task.Status = status;
+            task.UpdatedAt = DateTime.UtcNow;
+            task.DueDate = request.DueDate;
 
             var response = await _grpcUserClient.GetUserDetailByIdAsync(new GrpcIdRequest
             {
@@ -73,15 +77,14 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
                 IsActive = task.IsActive,
                 AssigneeName = response.FullName,
                 AssigneeUsername = response.Usrname,
-                CreatedAt = task.CreatedAt,
                 UpdatedAt = task.UpdatedAt,
+                CreatedAt = task.CreatedAt,
                 Status = task.Status.ToString(),
                 DueDate = task.DueDate,
             };
 
-            _context.Tasks.Add(task);
+            _context.Tasks.Update(task);
             await _context.Instance.SaveChangesAsync(cancellationToken);
-
             return Result<TaskDTO?>.Success(result);
         }
         catch (Exception ex)

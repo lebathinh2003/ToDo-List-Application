@@ -7,6 +7,7 @@ package UserProto;
 
 service GrpcUser {
     rpc GetSimpleUser(GrpcIdsSetRequest) returns (GrpcGetSimpleUsersDTO);
+    rpc GetUserDetailById(GrpcIdRequest) returns (GrpcUserDetailDTO);
 }
 
 message GrpcEmpty {}
@@ -29,4 +30,14 @@ message GrpcSimpleUser {
     string Address = 3;
     bool IsActive = 5;
     bool IsAdmin = 6; 
+}
+
+message GrpcUserDetailDTO {
+    string Id = 1;
+    string FullName = 2;
+    string Address = 3;
+    string Usrname = 4;
+    string Email = 5;
+    bool IsActive = 6;
+    bool IsAdmin = 7; 
 }

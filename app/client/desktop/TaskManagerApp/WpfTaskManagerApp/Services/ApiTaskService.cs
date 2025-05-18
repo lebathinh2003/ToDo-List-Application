@@ -81,8 +81,7 @@ public class ApiTaskService : ITaskService
         string? sortBy = null,
         string? sortOrder = "asc",
         string? keyword = null,
-        TaskStatusItem? status = null,
-        bool includeInactive = false)
+        TaskStatusItem? status = null)
     {
         await SetAuthHeader();
         var queryParams = new List<string> { $"skip={skip}", $"limit={limit}" };
@@ -90,9 +89,9 @@ public class ApiTaskService : ITaskService
         if (!string.IsNullOrWhiteSpace(sortOrder)) queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
         if (!string.IsNullOrWhiteSpace(keyword)) queryParams.Add($"keyword={Uri.EscapeDataString(keyword)}");
         if (status != null) queryParams.Add($"status={status.Status.ToString()}");
-        if (includeInactive) queryParams.Add("includeInactive=true"); // API cần hỗ trợ includeInactive cho tasks của assignee
+        queryParams.Add("includeInactive=false"); 
 
-        string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/assignee/{assigneeId}";
+        string requestUri = $"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/assignee/id/{assigneeId}";
         if (queryParams.Any()) requestUri += "?" + string.Join("&", queryParams);
 
         Debug.WriteLine($"ApiTaskService.GetTasksByAssigneeAsync: Requesting URL: {requestUri}");
@@ -146,7 +145,7 @@ public class ApiTaskService : ITaskService
         try
         {
             var taskToUpdate = new { task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
-            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/{task.Id}", taskToUpdate, _jsonSerializerOptions);
+            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/id/{task.Id}", taskToUpdate, _jsonSerializerOptions);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex) { Debug.WriteLine($"UpdateTaskAsync error: {ex.Message}"); }
@@ -158,10 +157,25 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/{taskId}");
+            HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/delete/id/{taskId}");
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex) { Debug.WriteLine($"DeleteTaskAsync error: {ex.Message}"); }
+        return false;
+    }
+
+    public async Task<bool> RestoreTaskAsync(Guid taskId)
+    {
+        await SetAuthHeader();
+        try
+        {
+            // Giả sử API dùng PATCH hoặc POST đến một endpoint cụ thể để restore
+            //var patchDoc = new[] { new { op = "replace", path = "/isActive", value = true } };
+            //HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{userId}/restore", patchDoc);
+            HttpResponseMessage response = await _httpClient.PostAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/restore/id/{taskId}", null);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { Debug.WriteLine($"RestoreTaskAsync error: {ex.Message}"); }
         return false;
     }
 
@@ -170,8 +184,12 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var statusUpdate = new { Status = newStatus.ToString() };
-            HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/{taskId}/status", statusUpdate, _jsonSerializerOptions);
+            var statusUpdate = new { status = newStatus.ToString() };
+            HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/status/id/{taskId}", statusUpdate, _jsonSerializerOptions);
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"UpdateTaskStatusAsync API error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+            }
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex) { Debug.WriteLine($"UpdateTaskStatusAsync error: {ex.Message}"); }

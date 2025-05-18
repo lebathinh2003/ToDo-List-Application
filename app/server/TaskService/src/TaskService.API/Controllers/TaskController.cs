@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using TaskService.API.Requests;
 using TaskService.Application.Tasks.Commands;
 using TaskService.Application.Tasks.Queries;
-using TaskService.Domain.Models;
 using TaskStatus = TaskService.Domain.Models.TaskStatus;
 namespace TaskService.API.Controllers;
 
@@ -22,8 +21,9 @@ public class TasksController : ControllerBase
         _httpContextAccessor = httpContextAccessor;
     }
 
-    [HttpPost("create")]
-    public async Task<IActionResult> CreateTask([FromQuery] CreateTaskRequest createTaskRequest)
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest createTaskRequest)
     {
         var result = await _sender.Send(new CreateTaskCommand
         {
@@ -31,6 +31,8 @@ public class TasksController : ControllerBase
             Status = createTaskRequest.Status,
             Description = createTaskRequest.Description,
             Title = createTaskRequest.Title,
+            IsActive = createTaskRequest.IsActive,
+            DueDate = createTaskRequest.DueDate,
         });
         return Ok(result);
     }
@@ -46,5 +48,90 @@ public class TasksController : ControllerBase
         });
         result.ThrowIfFailure();
         return Ok(result.Value);
+    }
+
+    [Authorize(Roles = "Staff")]
+    [HttpGet("assignee/id/{id}")]
+    public async Task<IActionResult> GetTasksByAssingeeId([FromQuery] PaginatedDTO paginatedDTO, TaskStatus? status, Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            return BadRequest("StaffId is null.");
+        }
+        var result = await _sender.Send(new GetFullTaskQuery
+        {
+            PaginatedDTO = paginatedDTO,
+            Status = status,
+            AssigneeId = id,
+        });
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("id/{id}")]
+    public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskRequest updateTaskRequest)
+    {
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Id is null.");
+        }
+
+        var result = await _sender.Send(new UpdateTaskCommand
+        {
+            Id = id,
+            AssigneeId = updateTaskRequest.AssigneeId,
+            Status = updateTaskRequest.Status,
+            Description = updateTaskRequest.Description,
+            Title = updateTaskRequest.Title,
+            IsActive = updateTaskRequest.IsActive,
+            DueDate = updateTaskRequest.DueDate,
+        });
+
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [Authorize(Roles = "Staff")]
+    [HttpPut("status/id/{id}")]
+    public async Task<IActionResult> UpdateTaskStatus(Guid id, [FromBody] UpdateTaskStatusRequest updateTaskStatusRequest)
+    {
+        if (id == Guid.Empty)
+        {
+            return BadRequest("Id is null.");
+        }
+
+        var result = await _sender.Send(new UpdateTaskStatusCommand
+        {
+            Id = id,
+            Status = updateTaskStatusRequest.Status,
+        });
+
+        result.ThrowIfFailure();
+        return Ok(result.Value);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("delete/id/{id}")]
+    public async Task<IActionResult> DeleteTask(Guid id)
+    {
+        var result = await _sender.Send(new DeleteTaskCommand
+        {
+            TaskId = id,
+        });
+        result.ThrowIfFailure();
+        return Ok();
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("restore/id/{id}")]
+    public async Task<IActionResult> RestoreTask(Guid id)
+    {
+        var result = await _sender.Send(new RestoreTaskCommand
+        {
+            TaskId = id,
+        });
+        result.ThrowIfFailure();
+        return Ok();
     }
 }

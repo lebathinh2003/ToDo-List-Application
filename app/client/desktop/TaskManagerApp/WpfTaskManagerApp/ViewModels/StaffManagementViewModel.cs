@@ -116,7 +116,13 @@ public class StaffManagementViewModel : ViewModelBase
         try
         {
             success = await _userService.DeleteUserAsync(staffToDelete.Id);
-            if (success) { _toastViewModel.Show($"Staff '{staffToDelete.FullName}' marked inactive.", ToastType.Success); staffToDelete.IsActive = false; (DeleteStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged(); (RestoreStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged(); await LoadStaffAsync(); }
+            if (success) {
+                _toastViewModel.Show($"Staff '{staffToDelete.FullName}' marked inactive.", ToastType.Success);
+                staffToDelete.IsActive = false;
+                (DeleteStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged(); 
+                (RestoreStaffCommand as RelayCommand<User>)?.RaiseCanExecuteChanged(); 
+                await LoadStaffAsync();
+            }
             else { _toastViewModel.Show($"Failed to mark staff '{staffToDelete.FullName}' inactive.", ToastType.Error); }
         }
         catch (Exception ex) { _toastViewModel.Show($"Error deleting staff: {ex.Message}", ToastType.Error); }

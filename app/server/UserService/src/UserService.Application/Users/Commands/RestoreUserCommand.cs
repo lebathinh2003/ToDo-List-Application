@@ -67,7 +67,7 @@ public class RestoreUserCommandHandler : IRequestHandler<RestoreUserCommand, Res
         }
         catch (Exception ex)
         {
-            return Result.Failure(UserError.AddUserFail, ex.Message);
+            return Result.Failure(UserError.RestoreUserFail, ex.Message);
         }
         
     }

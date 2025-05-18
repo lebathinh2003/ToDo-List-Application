@@ -188,7 +188,7 @@ public class ApiUserService : IUserService
         try
         {
             // Giả sử API dùng PATCH hoặc POST đến một endpoint cụ thể để restore
-            var patchDoc = new[] { new { op = "replace", path = "/isActive", value = true } };
+            //var patchDoc = new[] { new { op = "replace", path = "/isActive", value = true } };
             //HttpResponseMessage response = await _httpClient.PatchAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/id/{userId}/restore", patchDoc);
             HttpResponseMessage response = await _httpClient.PostAsync($"{ApiConfig.BaseUrl}/{ApiConfig.UserEndPoint}/restore/id/{userId}", null);
             return response.IsSuccessStatusCode;

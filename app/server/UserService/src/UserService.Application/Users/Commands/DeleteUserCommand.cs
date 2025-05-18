@@ -77,7 +77,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
         }
         catch (Exception ex)
         {
-            return Result.Failure(UserError.AddUserFail, ex.Message);
+            return Result.Failure(UserError.DeleteUserFail, ex.Message);
         }
         
     }

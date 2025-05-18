@@ -38,17 +38,42 @@ public class GrpcUserService : GrpcUser.GrpcUserBase
             mapField.Add(user.Id.ToString(), new GrpcSimpleUser
             {
                 Id = user.Id.ToString(),
-                Address = user.Address,
-                FullName = user.FullName,
+                Address = user.Address ?? "",
+                FullName = user.FullName ?? "",
                 IsActive = user.IsActive,
                 IsAdmin = user.Role == "Admin",
             });
         }
 
-        var grpcResult = new GrpcGetSimpleUsersDTO
+        return new GrpcGetSimpleUsersDTO
         {
             Users = { mapField }
         };
-        return grpcResult;
+    }
+
+    public override async Task<GrpcUserDetailDTO> GetUserDetailById(GrpcIdRequest request, ServerCallContext context)
+    {
+        if(request.Id == null)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Id must not be null."));
+        }
+
+        var response = await _sender.Send(new GetUserByIdQuery
+        {
+            Id = Guid.Parse(request.Id)
+        });
+
+        response.ThrowIfFailure();
+
+        return new GrpcUserDetailDTO
+        {
+            Id = response.Value!.Id.ToString(),
+            Address = response.Value.Address ?? "",
+            FullName = response.Value.FullName ?? "",
+            IsActive = response.Value.IsActive,
+            IsAdmin = response.Value.Role == "Admin",
+            Email = response.Value.Email ?? "",
+            Usrname = response.Value.Username ?? "",
+        };
     }
 }

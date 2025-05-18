@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +29,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             {
                 (AddTaskCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (EditTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
+                (RestoreTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
                 (DeleteTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
                 (SearchCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (RefreshCommand as RelayCommand)?.RaiseCanExecuteChanged();
@@ -54,15 +55,20 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             {
                 (EditTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
                 (DeleteTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
+                (RestoreTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
             }
         }
     }
 
     private string _searchTerm = string.Empty;
-    public string SearchTerm { get => _searchTerm; set => SetProperty(ref _searchTerm, value); }
+    public string SearchTerm
+    {
+        get => _searchTerm;
+        set => SetProperty(ref _searchTerm, value);
+    }
 
-    private TaskStatusItem _selectedFilterStatus;
-    public TaskStatusItem SelectedFilterStatus
+    private TaskStatusItem? _selectedFilterStatus;
+    public TaskStatusItem? SelectedFilterStatus
     {
         get => _selectedFilterStatus;
         set
@@ -76,7 +82,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             }
         }
     }
-    private List<TaskStatusItem> _allTaskStatusItems;
+    private List<TaskStatusItem>? _allTaskStatusItems;
     public IEnumerable<TaskStatusItem> AllTaskStatusesWithOptionalNone
     {
         get
@@ -89,7 +95,8 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
                 _selectedFilterStatus = addStatus;
                 foreach (TaskStatus status in Enum.GetValues(typeof(TaskStatus)))
                 {
-                    var displayName = status switch
+                    var displayName = status
+                    switch
                     {
                         TaskStatus.ToDo => "To Do",
                         TaskStatus.InProgress => "In Progress",
@@ -108,84 +115,257 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
     public string? SortBy
     {
         get => _sortBy;
-        set { if (SetProperty(ref _sortBy, value)) { CurrentPage = 1; _ = LoadTasksAsync(); } }
+        set
+        {
+            if (SetProperty(ref _sortBy, value))
+            {
+                CurrentPage = 1;
+                _ = LoadTasksAsync();
+            }
+        }
     }
     private string _sortOrder = "asc";
-    public string SortOrder { get => _sortOrder; set { if (SetProperty(ref _sortOrder, value)) { CurrentPage = 1; _ = LoadTasksAsync(); } } }
-    public ObservableCollection<string> SortableTaskProperties { get; }
-    public ObservableCollection<string> SortOrders { get; }
-
+    public string SortOrder
+    {
+        get => _sortOrder;
+        set
+        {
+            if (SetProperty(ref _sortOrder, value))
+            {
+                CurrentPage = 1;
+                _ = LoadTasksAsync();
+            }
+        }
+    }
+    public ObservableCollection<string> SortableTaskProperties
+    {
+        get;
+    }
+    public ObservableCollection<string> SortOrders
+    {
+        get;
+    }
 
     public bool CanAdminManageTasks => _authenticationService?.CurrentUser?.Role == UserRole.Admin;
 
     private int _currentPage = 1;
-    public int CurrentPage { get => _currentPage; set { if (value < 1) value = 1; if (SetProperty(ref _currentPage, value)) { OnPropertyChanged(nameof(CurrentPageDisplay)); UpdatePaginationCommandsCanExecute(); } } }
+    public int CurrentPage
+    {
+        get => _currentPage;
+        set
+        {
+            if (value < 1) value = 1;
+            if (SetProperty(ref _currentPage, value))
+            {
+                OnPropertyChanged(nameof(CurrentPageDisplay));
+                UpdatePaginationCommandsCanExecute();
+            }
+        }
+    }
     public string CurrentPageDisplay => $"{CurrentPage}";
     private int _limit = 10;
-    public int Limit { get => _limit; set { if (value < 1) value = 1; if (SetProperty(ref _limit, value)) { CurrentPage = 1; _ = LoadTasksAsync(); } } }
+    public int Limit
+    {
+        get => _limit;
+        set
+        {
+            if (value < 1) value = 1;
+            if (SetProperty(ref _limit, value))
+            {
+                CurrentPage = 1;
+                _ = LoadTasksAsync();
+            }
+        }
+    }
     private int _totalItems;
-    public int TotalItems { get => _totalItems; private set { if (SetProperty(ref _totalItems, value)) { OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(TotalPagesDisplay)); UpdatePaginationCommandsCanExecute(); } } }
+    public int TotalItems
+    {
+        get => _totalItems;
+        private set
+        {
+            if (SetProperty(ref _totalItems, value))
+            {
+                OnPropertyChanged(nameof(TotalPages));
+                OnPropertyChanged(nameof(TotalPagesDisplay));
+                UpdatePaginationCommandsCanExecute();
+            }
+        }
+    }
     public int TotalPages => (TotalItems == 0 || Limit <= 0) ? 1 : (int)Math.Ceiling((double)TotalItems / Limit);
     public string TotalPagesDisplay => $"{TotalPages}";
     public bool CanGoToPreviousPage => CurrentPage > 1 && !IsLoading;
     public bool CanGoToNextPage => CurrentPage < TotalPages && !IsLoading;
 
-    public ICommand AddTaskCommand { get; }
-    public ICommand EditTaskCommand { get; }
-    public ICommand DeleteTaskCommand { get; }
-    public ICommand SearchCommand { get; }
-    public ICommand RefreshCommand { get; }
-    public ICommand FirstPageCommand { get; }
-    public ICommand PreviousPageCommand { get; }
-    public ICommand NextPageCommand { get; }
-    public ICommand LastPageCommand { get; }
+    public ICommand AddTaskCommand
+    {
+        get;
+    }
+    public ICommand EditTaskCommand
+    {
+        get;
+    }
+    public ICommand DeleteTaskCommand
+    {
+        get;
+    }
+    public ICommand RestoreTaskCommand
+    {
+        get;
+    }
+    public ICommand SearchCommand
+    {
+        get;
+    }
+    public ICommand RefreshCommand
+    {
+        get;
+    }
+    public ICommand FirstPageCommand
+    {
+        get;
+    }
+    public ICommand PreviousPageCommand
+    {
+        get;
+    }
+    public ICommand NextPageCommand
+    {
+        get;
+    }
+    public ICommand LastPageCommand
+    {
+        get;
+    }
 
     public TaskManagementViewModel() // Constructor cho Design-Time
     {
-        _taskService = null; _userService = null; _authenticationService = null; _serviceProvider = null; _signalRService = null; _toastViewModel = new ToastNotificationViewModel();
-        SortableTaskProperties = new ObservableCollection<string> { "Title", "DueDate", "AssigneeName", "Status" };
-        SortOrders = new ObservableCollection<string> { "asc", "desc" }; SortBy = "DueDate";
-        Tasks = new ObservableCollection<TaskItem>
-            {
-                new TaskItem(Guid.NewGuid(), "Design UI for Login", "Complete the UI design for the login page", TaskStatus.InProgress) { AssigneeName = "Designer A", DueDate = DateTime.Now.AddDays(2) },
-                new TaskItem(Guid.NewGuid(), "Develop API for Tasks", "Implement CRUD operations for tasks", TaskStatus.ToDo) { AssigneeName = "Developer B", DueDate = DateTime.Now.AddDays(5), IsActive = true },
-                new TaskItem(Guid.NewGuid(), "Test Payment Gateway", "Perform thorough testing of the payment gateway", TaskStatus.Done) { AssigneeName = "QA C", DueDate = DateTime.Now.AddDays(-1), IsActive = false }
-            };
-        TotalItems = Tasks.Count; CurrentPage = 1; Limit = 10;
-        AddTaskCommand = new RelayCommand(_ => { }, _ => false); EditTaskCommand = new RelayCommand<TaskItem>(_ => { }, _ => false); DeleteTaskCommand = new RelayCommand<TaskItem>(_ => { }, _ => false);
-        SearchCommand = new RelayCommand(async _ => { CurrentPage = 1; await LoadTasksAsync(); }, _ => !IsLoading); // Cho phép search ở design-time
+        _taskService = null;
+        _userService = null;
+        _authenticationService = null;
+        _serviceProvider = null;
+        _signalRService = null;
+        _toastViewModel = new ToastNotificationViewModel();
+        SortableTaskProperties = new ObservableCollection<string> {
+            "Title",
+            "DueDate",
+            "AssigneeName",
+            "Status"
+        };
+        SortOrders = new ObservableCollection<string> {
+            "asc",
+            "desc"
+        };
+        SortBy = "DueDate";
+        Tasks = new ObservableCollection<TaskItem> {
+            new TaskItem(Guid.NewGuid(), "Design UI for Login", "Complete the UI design for the login page", TaskStatus.InProgress) {
+                AssigneeName = "Designer A", DueDate = DateTime.Now.AddDays(2)
+            },
+            new TaskItem(Guid.NewGuid(), "Develop API for Tasks", "Implement CRUD operations for tasks", TaskStatus.ToDo) {
+                AssigneeName = "Developer B", DueDate = DateTime.Now.AddDays(5), IsActive = true
+            },
+            new TaskItem(Guid.NewGuid(), "Test Payment Gateway", "Perform thorough testing of the payment gateway", TaskStatus.Done) {
+                AssigneeName = "QA C", DueDate = DateTime.Now.AddDays(-1), IsActive = false
+            }
+        };
+        TotalItems = Tasks.Count;
+        CurrentPage = 1;
+        Limit = 10;
+        AddTaskCommand = new RelayCommand(_ => { }, _ => false);
+        EditTaskCommand = new RelayCommand<TaskItem>(_ => { }, _ => false);
+        DeleteTaskCommand = new RelayCommand<TaskItem>(_ => { }, _ => false);
+        RestoreTaskCommand = new RelayCommand<TaskItem>(_ => { }, _ => false);
+        SearchCommand = new RelayCommand(async _ => {
+            CurrentPage = 1;
+            await LoadTasksAsync();
+        }, _ => !IsLoading); // Cho phép search ở design-time
         RefreshCommand = new RelayCommand(async _ => await LoadTasksAsync(), _ => !IsLoading); // Cho phép refresh ở design-time
-        FirstPageCommand = new RelayCommand(async _ => { }, _ => false); PreviousPageCommand = new RelayCommand(async _ => { }, _ => false); NextPageCommand = new RelayCommand(async _ => { }, _ => false); LastPageCommand = new RelayCommand(async _ => { }, _ => false);
-        OnPropertyChanged(nameof(CanAdminManageTasks)); UpdatePaginationCommandsCanExecute();
+        FirstPageCommand = new RelayCommand(async _ => { }, _ => false);
+        PreviousPageCommand = new RelayCommand(async _ => { }, _ => false);
+        NextPageCommand = new RelayCommand(async _ => { }, _ => false);
+        LastPageCommand = new RelayCommand(async _ => { }, _ => false);
+        OnPropertyChanged(nameof(CanAdminManageTasks));
+        UpdatePaginationCommandsCanExecute();
     }
 
     public TaskManagementViewModel(ITaskService taskService, IUserService userService,
-                                 IAuthenticationService authenticationService, IServiceProvider serviceProvider,
-                                 ISignalRService signalRService, ToastNotificationViewModel toastViewModel)
+        IAuthenticationService authenticationService, IServiceProvider serviceProvider,
+        ISignalRService signalRService, ToastNotificationViewModel toastViewModel)
     {
-        _taskService = taskService ?? throw new ArgumentNullException(nameof(taskService));
+        _taskService = taskService ??
+            throw new ArgumentNullException(nameof(taskService));
         _userService = userService;
-        _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _signalRService = signalRService ?? throw new ArgumentNullException(nameof(signalRService));
-        _toastViewModel = toastViewModel ?? throw new ArgumentNullException(nameof(toastViewModel));
+        _authenticationService = authenticationService ??
+            throw new ArgumentNullException(nameof(authenticationService));
+        _serviceProvider = serviceProvider ??
+            throw new ArgumentNullException(nameof(serviceProvider));
+        _signalRService = signalRService ??
+            throw new ArgumentNullException(nameof(signalRService));
+        _toastViewModel = toastViewModel ??
+            throw new ArgumentNullException(nameof(toastViewModel));
 
-        SortableTaskProperties = new ObservableCollection<string> { "Title", "DueDate", "AssigneeName", "Status" };
-        SortOrders = new ObservableCollection<string> { "asc", "desc" };
-        _sortBy = "DueDate"; _sortOrder = "desc";
+        SortableTaskProperties = new ObservableCollection<string> {
+            "Title",
+            "DueDate",
+            "AssigneeName",
+            "Status"
+        };
+        SortOrders = new ObservableCollection<string> {
+            "asc",
+            "desc"
+        };
+        _sortBy = "DueDate";
+        _sortOrder = "desc";
 
         AddTaskCommand = new RelayCommand(async _ => await OpenAddEditTaskDialog(null), _ => CanAdminManageTasks && !IsLoading);
         EditTaskCommand = new RelayCommand<TaskItem>(async (task) => await OpenAddEditTaskDialog(task),
-            (task) => task != null && CanAdminManageTasks && !IsLoading);
+            (task) =>
+            {
+                if (task == null || IsLoading) return false;
+                var currentUser = _authenticationService?.CurrentUser;
+                if (currentUser == null) return false;
+                // Admin có thể sửa mọi task
+                if (currentUser.Role == UserRole.Admin) return true;
+                // Staff chỉ có thể sửa task được gán cho họ
+                if (currentUser.Role == UserRole.Staff && task.AssigneeId == currentUser.Id) return true;
+                return false;
+            });
         DeleteTaskCommand = new RelayCommand<TaskItem>(async (task) => await DeleteTaskAsync(task),
             (task) => task != null && task.IsActive && CanAdminManageTasks && !IsLoading);
+        RestoreTaskCommand = new RelayCommand<TaskItem>(async (task) => await RestoreTaskAsync(task), (task) => task != null && !task.IsActive && !IsLoading);
 
-        SearchCommand = new RelayCommand(async _ => { CurrentPage = 1; await LoadTasksAsync(); }, _ => !IsLoading);
+        SearchCommand = new RelayCommand(async _ => {
+            CurrentPage = 1;
+            await LoadTasksAsync();
+        }, _ => !IsLoading);
         RefreshCommand = new RelayCommand(async _ => await LoadTasksAsync(), _ => !IsLoading);
-        FirstPageCommand = new RelayCommand(async _ => { if (CurrentPage != 1) { CurrentPage = 1; await LoadTasksAsync(); } }, _ => CanGoToPreviousPage);
-        PreviousPageCommand = new RelayCommand(async _ => { if (CanGoToPreviousPage) { CurrentPage--; await LoadTasksAsync(); } }, _ => CanGoToPreviousPage);
-        NextPageCommand = new RelayCommand(async _ => { if (CanGoToNextPage) { CurrentPage++; await LoadTasksAsync(); } }, _ => CanGoToNextPage);
-        LastPageCommand = new RelayCommand(async _ => { if (CurrentPage != TotalPages && TotalPages > 0) { CurrentPage = TotalPages; await LoadTasksAsync(); } }, _ => CanGoToNextPage && CurrentPage != TotalPages);
+        FirstPageCommand = new RelayCommand(async _ => {
+            if (CurrentPage != 1)
+            {
+                CurrentPage = 1;
+                await LoadTasksAsync();
+            }
+        }, _ => CanGoToPreviousPage);
+        PreviousPageCommand = new RelayCommand(async _ => {
+            if (CanGoToPreviousPage)
+            {
+                CurrentPage--;
+                await LoadTasksAsync();
+            }
+        }, _ => CanGoToPreviousPage);
+        NextPageCommand = new RelayCommand(async _ => {
+            if (CanGoToNextPage)
+            {
+                CurrentPage++;
+                await LoadTasksAsync();
+            }
+        }, _ => CanGoToNextPage);
+        LastPageCommand = new RelayCommand(async _ => {
+            if (CurrentPage != TotalPages && TotalPages > 0)
+            {
+                CurrentPage = TotalPages;
+                await LoadTasksAsync();
+            }
+        }, _ => CanGoToNextPage && CurrentPage != TotalPages);
 
         _signalRService.NewTaskAssigned += OnSignalRNewTaskAssigned;
         _signalRService.TaskStatusUpdated += OnSignalRTaskStatusUpdated;
@@ -196,9 +376,12 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
 
     private void UpdatePaginationCommandsCanExecute()
     {
-        OnPropertyChanged(nameof(CanGoToPreviousPage)); OnPropertyChanged(nameof(CanGoToNextPage));
-        (FirstPageCommand as RelayCommand)?.RaiseCanExecuteChanged(); (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
-        (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged(); (LastPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanGoToPreviousPage));
+        OnPropertyChanged(nameof(CanGoToNextPage));
+        (FirstPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (LastPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
     public async Task LoadTasksAsync()
@@ -220,7 +403,9 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
 
             if (currentUser == null)
             {
-                Tasks.Clear(); TotalItems = 0; CurrentPage = 1;
+                Tasks.Clear();
+                TotalItems = 0;
+                CurrentPage = 1;
                 _toastViewModel?.Show("No user logged in. Cannot load tasks.", ToastType.Warning);
                 return;
             }
@@ -231,7 +416,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             }
             else // Staff
             {
-                paginatedResult = await _taskService.GetTasksByAssigneeAsync(currentUser.Id, apiSkipParameter, Limit, SortBy, SortOrder, SearchTerm, SelectedFilterStatus, includeInactive: false);
+                paginatedResult = await _taskService.GetTasksByAssigneeAsync(currentUser.Id, apiSkipParameter, Limit, SortBy, SortOrder, SearchTerm, SelectedFilterStatus);
             }
 
             if (paginatedResult?.PaginatedData != null)
@@ -243,20 +428,29 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
                     if (CurrentPage > TotalPages && TotalPages > 0) CurrentPage = TotalPages;
                     else if (TotalPages == 0 && TotalItems == 0) CurrentPage = 1;
                 }
-                else { TotalItems = Tasks.Count; }
+                else
+                {
+                    TotalItems = Tasks.Count;
+                }
             }
             else
             {
-                Tasks.Clear(); TotalItems = 0; CurrentPage = 1;
+                Tasks.Clear();
+                TotalItems = 0;
+                CurrentPage = 1;
                 _toastViewModel?.Show("No tasks found or error loading tasks.", ToastType.Information);
             }
         }
         catch (Exception ex)
         {
             _toastViewModel?.Show($"Error loading tasks: {ex.Message}", ToastType.Error);
-            Tasks.Clear(); TotalItems = 0;
+            Tasks.Clear();
+            TotalItems = 0;
         }
-        finally { IsLoading = false; }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task OpenAddEditTaskDialog(TaskItem? taskToEdit)
@@ -281,7 +475,10 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         // Sau đó mới load danh sách người dùng có thể giao
         await addEditTaskViewModel.LoadAssignableUsersAsync();
 
-        var dialogView = new AddEditTaskDialog { DataContext = addEditTaskViewModel };
+        var dialogView = new AddEditTaskDialog
+        {
+            DataContext = addEditTaskViewModel
+        };
         var dialogWindow = new Window
         {
             Title = addEditTaskViewModel.WindowTitle,
@@ -294,8 +491,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             ShowInTaskbar = false,
             WindowStyle = WindowStyle.ToolWindow
         };
-        addEditTaskViewModel.CloseActionWithResult = (success) =>
-        {
+        addEditTaskViewModel.CloseActionWithResult = (success) => {
             dialogWindow.DialogResult = success;
             dialogWindow.Close();
             if (success)
@@ -306,27 +502,56 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         dialogWindow.ShowDialog();
     }
 
-
     private async Task DeleteTaskAsync(TaskItem? taskToDelete)
     {
-        if (taskToDelete == null || _taskService == null || _toastViewModel == null || !CanAdminManageTasks)
-        {
-            _toastViewModel?.Show("Cannot delete task: Invalid operation or missing services.", ToastType.Error);
-            return;
-        }
+        if (taskToDelete == null || _taskService == null || _toastViewModel == null || !CanAdminManageTasks) return;
+
         // TODO: Implement confirmation dialog
         IsLoading = true;
+        bool success = false;
         try
         {
-            bool success = await _taskService.DeleteTaskAsync(taskToDelete.Id);
+            success = await _taskService.DeleteTaskAsync(taskToDelete.Id);
             if (success)
             {
-                _toastViewModel.Show($"Task '{taskToDelete.Title}' deleted.", ToastType.Success);
-                await LoadTasksAsync();
+                _toastViewModel.Show($"Task '{taskToDelete.Title}' marked as inactive.", ToastType.Success);
+                // Cập nhật lạc quan
+                taskToDelete.IsActive = false;
+                (DeleteTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
+                (RestoreTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
+                // Có thể không cần LoadStaffAsync() ngay nếu UI đã cập nhật,
+                // nhưng để đảm bảo đồng bộ thì nên gọi, hoặc gọi khi refresh.
+                // await LoadStaffAsync(); 
             }
-            else { _toastViewModel.Show($"Failed to delete task '{taskToDelete.Title}'.", ToastType.Error); }
+            else { _toastViewModel.Show($"Failed to mark task '{taskToDelete.Title}' as inactive.", ToastType.Error); }
         }
-        catch (Exception ex) { _toastViewModel.Show($"Error deleting task: {ex.Message}", ToastType.Error); }
+        catch (Exception ex) {
+            _toastViewModel.Show($"Error deleting task: {ex.Message}", ToastType.Error);
+        }
+        finally { IsLoading = false; }
+    }
+
+    private async Task RestoreTaskAsync(TaskItem? taskToRestore)
+    {
+        if (taskToRestore == null || _taskService == null || _toastViewModel == null || !CanAdminManageTasks) return;
+        IsLoading = true;
+        bool success = false;
+        try
+        {
+            success = await _taskService.RestoreTaskAsync(taskToRestore.Id);
+            if (success)
+            {
+                _toastViewModel.Show($"Task '{taskToRestore.Title}' restored successfully.", ToastType.Success);
+                taskToRestore.IsActive = true;
+                (DeleteTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
+                (RestoreTaskCommand as RelayCommand<TaskItem>)?.RaiseCanExecuteChanged();
+                // await LoadStaffAsync(); // Tương tự như Delete
+            }
+            else { _toastViewModel.Show($"Failed to restore task '{taskToRestore.Title}'.", ToastType.Error); }
+        }
+        catch (Exception ex) { 
+            _toastViewModel.Show($"Error restoring task: {ex.Message}", ToastType.Error);
+        }
         finally { IsLoading = false; }
     }
 
@@ -340,7 +565,10 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             var existingTask = Tasks.FirstOrDefault(t => t.Id == newTask.Id);
             if (existingTask == null)
             {
-                Application.Current.Dispatcher.Invoke(() => { Tasks.Insert(0, newTask); TotalItems++; });
+                Application.Current.Dispatcher.Invoke(() => {
+                    Tasks.Insert(0, newTask);
+                    TotalItems++;
+                });
                 _toastViewModel?.Show($"New task assigned to you: {newTask.Title}", ToastType.Information);
             }
         }
@@ -351,10 +579,14 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         if (taskInList != null)
         {
             Application.Current.Dispatcher.Invoke(() => {
-                taskInList.Title = updatedTask.Title; taskInList.Description = updatedTask.Description;
-                taskInList.Status = updatedTask.Status; taskInList.AssigneeId = updatedTask.AssigneeId;
-                taskInList.AssigneeName = updatedTask.AssigneeName; taskInList.AssigneeUsername = updatedTask.AssigneeUsername;
-                taskInList.DueDate = updatedTask.DueDate; taskInList.IsActive = updatedTask.IsActive;
+                taskInList.Title = updatedTask.Title;
+                taskInList.Description = updatedTask.Description;
+                taskInList.Status = updatedTask.Status;
+                taskInList.AssigneeId = updatedTask.AssigneeId;
+                taskInList.AssigneeName = updatedTask.AssigneeName;
+                taskInList.AssigneeUsername = updatedTask.AssigneeUsername;
+                taskInList.DueDate = updatedTask.DueDate;
+                taskInList.IsActive = updatedTask.IsActive;
             });
             _toastViewModel?.Show($"Task '{updatedTask.Title}' updated to {updatedTask.Status}.", ToastType.Information);
         }

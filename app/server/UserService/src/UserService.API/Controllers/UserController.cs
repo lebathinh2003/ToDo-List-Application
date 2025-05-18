@@ -119,7 +119,6 @@ public class UserController : ControllerBase
     [HttpPut("id/{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest updateUserRequest)
     {
-        Console.WriteLine("Passworddddddddđ:" + updateUserRequest.Password);
         if (id == Guid.Empty)
         {
             return BadRequest("Id is null.");

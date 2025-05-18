@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 namespace TaskService.API.Requests;
-public class CreateTaskRequest
+public class UpdateTaskRequest
 {
     [Required]
     public Guid AssigneeId { get; set; }

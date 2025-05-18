@@ -21,13 +21,13 @@ public interface ITaskService
         string? sortBy = null,
         string? sortOrder = null,
         string? keyword = null,
-        TaskStatusItem? status = null, // Thêm filter theo status
-        bool includeInactive = false);
+        TaskStatusItem? status = null);
     // ***** KẾT THÚC CẬP NHẬT SIGNATURE *****
 
     Task<TaskItem?> GetTaskByIdAsync(Guid taskId);
     Task<TaskItem?> AddTaskAsync(TaskItem task);
     Task<bool> UpdateTaskAsync(TaskItem task);
     Task<bool> DeleteTaskAsync(Guid taskId);
+    Task<bool> RestoreTaskAsync(Guid taskId);
     Task<bool> UpdateTaskStatusAsync(Guid taskId, TaskStatus newStatus);
 }

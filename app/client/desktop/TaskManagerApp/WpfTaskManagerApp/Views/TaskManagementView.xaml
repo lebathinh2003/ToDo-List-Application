@@ -50,47 +50,24 @@
                 </Setter>
             </Style>
 
-            <Style TargetType="Button" x:Key="DataGridActionButtonStyle">
-                <Setter Property="Foreground" Value="White"/>
+            <Style TargetType="Button" x:Key="DataGridActionButtonStyle" BasedOn="{StaticResource BaseActionButtonStyle}">
                 <Setter Property="Padding" Value="10,5"/>
                 <Setter Property="Margin" Value="2,0"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="MinWidth" Value="65"/>
                 <Setter Property="Height" Value="28"/>
                 <Setter Property="FontSize" Value="11"/>
-                <Setter Property="FontWeight" Value="Medium"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="3">
-                                <Border.Effect>
-                                    <DropShadowEffect ShadowDepth="1" Color="Black" Opacity="0.05" BlurRadius="1"/>
-                                </Border.Effect>
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.80"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.5"/>
-                                    <Setter TargetName="border" Property="Background" Value="#D1D5DB"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
-
 
             <Style TargetType="Button" x:Key="EditDataGridButtonStyle" BasedOn="{StaticResource DataGridActionButtonStyle}">
                 <Setter Property="Background" Value="#7F8C8D"/>
             </Style>
             <Style TargetType="Button" x:Key="DeleteDataGridButtonStyle" BasedOn="{StaticResource DataGridActionButtonStyle}">
                 <Setter Property="Background" Value="#C0392B"/>
+            </Style>
+            <Style TargetType="Button" x:Key="RestoreDataGridButtonStyle" BasedOn="{StaticResource DataGridActionButtonStyle}">
+                <Setter Property="Background" Value="#27AE60"/>
             </Style>
 
             <Style TargetType="Button" x:Key="PanelActionButtonStyle" BasedOn="{StaticResource BaseActionButtonStyle}">
@@ -105,6 +82,7 @@
             <Style TargetType="Button" x:Key="SecondaryPanelActionButtonStyle" BasedOn="{StaticResource PanelActionButtonStyle}">
                 <Setter Property="Background" Value="#95A5A6"/>
             </Style>
+
 
             <Style TargetType="TextBox" x:Key="SearchTextBoxStyle">
                 <Setter Property="Padding" Value="10,7"/>
@@ -159,7 +137,8 @@
                                               BorderThickness="{TemplateBinding BorderThickness}">
                                     <ToggleButton.Template>
                                         <ControlTemplate TargetType="ToggleButton">
-                                            <Border x:Name="templateRoot" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                            <Border x:Name="templateRoot" 
+                                                    Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
                                                     BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
                                                     BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
                                                     CornerRadius="4">
@@ -187,11 +166,6 @@
                                         </ControlTemplate>
                                     </ToggleButton.Template>
                                 </ToggleButton>
-                                <ContentPresenter Name="ContentSite" IsHitTestVisible="False" 
-                                                  Content="{TemplateBinding SelectionBoxItem}" 
-                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
-                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" 
-                                                  Margin="10,0,25,0" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                 <Popup Name="PART_Popup" AllowsTransparency="true" Focusable="false" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" PopupAnimation="Slide" Placement="Bottom">
                                     <Border Name="DropDownBorder" Background="White" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="4" MaxHeight="{TemplateBinding MaxDropDownHeight}" MinWidth="{TemplateBinding ActualWidth}">
                                         <Border.Effect>
@@ -317,9 +291,15 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
                     <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#4B5563" FontWeight="Medium"/>
                     <ComboBox ItemsSource="{Binding AllTaskStatusesWithOptionalNone}" 
-          SelectedItem="{Binding SelectedFilterStatus, Mode=TwoWay}" 
-          Style="{StaticResource StyledComboBoxStyle}"
-          MinWidth="130" />
+                              SelectedItem="{Binding SelectedFilterStatus, Mode=TwoWay}"
+                              Style="{StaticResource StyledComboBoxStyle}"
+                              MinWidth="130">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource TaskStatusToStringConverter}, ConverterParameter=All}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
@@ -376,21 +356,49 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="Actions" Width="Auto" MinWidth="180"
-                                        Visibility="{Binding DataContext.CanAdminManageTasks, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <DataGridTemplateColumn Header="Actions" Width="Auto" MinWidth="180">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Edit Button -->
                                 <Button Content="Edit" 
-                                        Command="{Binding DataContext.EditTaskCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource EditDataGridButtonStyle}" />
+                        Command="{Binding DataContext.EditTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        Style="{StaticResource EditDataGridButtonStyle}" />
 
+                                <!-- Delete Button (Corrected) -->
                                 <Button Content="Delete" 
-                                        Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource DeleteDataGridButtonStyle}" 
-                                        Visibility="{Binding IsActive, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource DeleteDataGridButtonStyle}">
+                                            <Setter Property="Visibility" 
+                                    Value="{Binding DataContext.CanAdminManageTasks, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Restore Button (Corrected) -->
+                                <Button Content="Restore" 
+                        Command="{Binding DataContext.RestoreTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource RestoreDataGridButtonStyle}">
+                                            <Setter Property="Visibility" 
+                                    Value="{Binding DataContext.CanAdminManageTasks, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -407,21 +415,14 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="&lt;&lt; First" Command="{Binding FirstPageCommand}" Style="{StaticResource SecondaryPanelActionButtonStyle}" IsEnabled="{Binding CanGoToPreviousPage}" Padding="10,5"/>
                     <Button Content="&lt; Previous" Command="{Binding PreviousPageCommand}" Style="{StaticResource SecondaryPanelActionButtonStyle}" IsEnabled="{Binding CanGoToPreviousPage}" Padding="10,5"/>
-                    <TextBlock VerticalAlignment="Center" Margin="10,0" Foreground="#4B5563" FontWeight="Medium">
-                        <Run Text="Page"/>
-                        <Run Text="{Binding CurrentPageDisplay, FallbackValue=1, Mode=OneWay}"/>
-                        <Run Text="of"/>
-                        <Run Text="{Binding TotalPagesDisplay, FallbackValue=1, Mode=OneWay}"/>
-                    </TextBlock>
+                    <TextBlock VerticalAlignment="Center" Margin="10,0" Foreground="#4B5563" FontWeight="Medium"> <Run Text="Page"/> <Run Text="{Binding CurrentPageDisplay, FallbackValue=1, Mode=OneWay}"/> <Run Text="of"/> <Run Text="{Binding TotalPagesDisplay, FallbackValue=1, Mode=OneWay}"/></TextBlock>
                     <Button Content="Next &gt;" Command="{Binding NextPageCommand}" Style="{StaticResource SecondaryPanelActionButtonStyle}" IsEnabled="{Binding CanGoToNextPage}" Padding="10,5"/>
                     <Button Content="Last &gt;&gt;" Command="{Binding LastPageCommand}" Style="{StaticResource SecondaryPanelActionButtonStyle}" IsEnabled="{Binding CanGoToNextPage}" Padding="10,5"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <ProgressBar Grid.Row="1" Grid.RowSpan="3" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Margin="0,5,0,0"
-                     Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"
-                     Panel.ZIndex="1"/>
+        <ProgressBar Grid.Row="1" Grid.RowSpan="3" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Margin="0,5,0,0" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" Panel.ZIndex="1"/>
 
     </Grid>
 </UserControl>

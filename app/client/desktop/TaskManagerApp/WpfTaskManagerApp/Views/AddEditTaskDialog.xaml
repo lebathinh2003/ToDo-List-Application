@@ -219,13 +219,15 @@
                 <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
                          Style="{StaticResource DialogInputTextBoxStyle}"
                          Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
-                         Margin="0,0,0,15"/>
+                         Margin="0,0,0,15"
+                         IsEnabled="{Binding CanEditTitle}"/>
 
                 <TextBlock Text="Description:" Style="{StaticResource DialogLabelStyle}"/>
                 <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 
                          Style="{StaticResource DialogInputTextBoxStyle}" AcceptsReturn="True" TextWrapping="Wrap" 
                          MinHeight="80" Height="Auto" VerticalScrollBarVisibility="Auto"
-                         Margin="0,0,0,15"/>
+                         Margin="0,0,0,15"
+                         IsEnabled="{Binding CanEditDescription}"/>
 
                 <TextBlock Text="Assignee:" Style="{StaticResource DialogLabelStyle}"/>
 
@@ -237,7 +239,8 @@
                           IsTextSearchEnabled="False" 
                           Style="{StaticResource DialogComboBoxStyle}"
                           Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
-                          Margin="0,0,0,15">        
+                          Margin="0,0,0,15"
+                          IsEnabled="{Binding CanEditAssignee}">
                     <ComboBox.ItemContainerStyle>
                         <Style TargetType="ComboBoxItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -258,16 +261,21 @@
 
                 <TextBlock Text="Status:" Style="{StaticResource DialogLabelStyle}"/>
                 <ComboBox ItemsSource="{Binding AllTaskStatuses}" 
-                          SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                           Style="{StaticResource DialogComboBoxStyle}"
-                          Margin="0,0,0,15"/>
+                          Margin="0,0,0,15"
+                          IsEnabled="{Binding CanEditStatus}"/>
 
                 <TextBlock Text="Due Date (Optional):" Style="{StaticResource DialogLabelStyle}"/>
                 <DatePicker SelectedDate="{Binding DueDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                             Style="{StaticResource DialogDatePickerStyle}"
-                            Margin="0,0,0,15"/>
+                            Margin="0,0,0,15"
+                            IsEnabled="{Binding CanEditIsActive}"/>
 
-                <CheckBox Content="Is Active" IsChecked="{Binding IsActive}" Style="{StaticResource DialogCheckBoxStyle}"/>
+                <CheckBox Content="Is Active" 
+                          IsChecked="{Binding IsActive}" 
+                          IsEnabled="{Binding CanEditIsActive}"
+                          Style="{StaticResource DialogCheckBoxStyle}"/>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource DialogSecondaryButtonStyle}" Margin="0,0,10,0"/>

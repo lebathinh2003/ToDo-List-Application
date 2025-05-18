@@ -9,7 +9,6 @@ using System.ComponentModel.DataAnnotations;
 using TaskService.Application.DTOs;
 using TaskService.Domain.Errors;
 using TaskService.Domain.Interfaces;
-using TaskService.Domain.Models;
 using TaskService.Domain.Responses;
 using UserProto;
 using TaskStatus = TaskService.Domain.Models.TaskStatus;
@@ -21,6 +20,8 @@ public class GetFullTaskQuery : IRequest<Result<PaginatedGetFullTaskDTO?>>
     [Required]
     public PaginatedDTO PaginatedDTO { get; init; } = null!;
     public TaskStatus? Status { get; set; } = null!;
+
+    public Guid? AssigneeId { get; set; } = null!;
 }
 
 public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<PaginatedGetFullTaskDTO?>>
@@ -43,7 +44,6 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
         try
         {
 
-            Console.WriteLine("Statusssssssss"+ request.Status);
 
             var paginatedDTO = request.PaginatedDTO;
 
@@ -53,6 +53,12 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
             }
 
             var taskQuery = _context.Tasks.AsQueryable();
+
+            if (request.AssigneeId != null && request.AssigneeId != Guid.Empty)
+            {
+                taskQuery = taskQuery.Where(t => t.AssigneeId == request.AssigneeId);
+            }
+
 
             if(request.Status != null)
             {

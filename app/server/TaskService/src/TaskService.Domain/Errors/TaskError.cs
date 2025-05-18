@@ -13,6 +13,16 @@ public class TaskError
             Message: "They already have the Task, abort adding addition Task",
             StatusCode: (int)HttpStatusCode.Conflict);
 
+    public static Error TaskAlreadyInactive =>
+        new("TaskError.TaskAlreadyInactive",
+            Message: "This task is already inactive",
+            StatusCode: (int)HttpStatusCode.BadRequest);
+
+    public static Error TaskAlreadyActive =>
+        new("TaskError.TaskAlreadyActive",
+            Message: "This task is already active",
+            StatusCode: (int)HttpStatusCode.BadRequest);
+
     public static Error NullParameters =>
         new("TaskError.NullParameters",
             Message: "Some parameter is null check the server's log for full errors",
@@ -36,6 +46,11 @@ public class TaskError
     public static Error DeleteTaskFail =>
         new("TaskError.DeleteTaskFail",
             Message: "Delete Task fail.",
+            StatusCode: (int)HttpStatusCode.InternalServerError);
+
+    public static Error RestoreTaskFail =>
+        new("TaskError.RestoreTaskFail",
+            Message: "Restore Task fail.",
             StatusCode: (int)HttpStatusCode.InternalServerError);
 
     public static Error GetTaskFail =>
