@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
+
 namespace WpfTaskManagerApp.Converters
 {
     [ValueConversion(typeof(string), typeof(Brush))]

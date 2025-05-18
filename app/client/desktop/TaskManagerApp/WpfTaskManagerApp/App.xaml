@@ -5,7 +5,8 @@
              xmlns:viewModels="clr-namespace:WpfTaskManagerApp.ViewModels"
              xmlns:views="clr-namespace:WpfTaskManagerApp.Views"
              xmlns:converters="clr-namespace:WpfTaskManagerApp.Converters"
-             xmlns:helpers="clr-namespace:WpfTaskManagerApp.Helpers">
+             xmlns:helpers="clr-namespace:WpfTaskManagerApp.Helpers"
+             ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -17,7 +18,6 @@
             <converters:BooleanToStringConverter x:Key="BooleanToStringConverter"/>
             <converters:BooleanToStatusConverter x:Key="BooleanToStatusConverter"/>
             <converters:StatusToBrushConverter x:Key="StatusToBrushConverter"/>
-            <converters:TaskStatusToBrushConverter x:Key="TaskStatusToBrushConverter"/>
             <converters:TaskStatusToStringConverter x:Key="TaskStatusToStringConverter"/>
 
             <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
@@ -31,6 +31,9 @@
             </DataTemplate>
             <DataTemplate DataType="{x:Type viewModels:TaskManagementViewModel}">
                 <views:TaskManagementView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModels:AddEditTaskViewModel}">
+                <views:AddEditTaskDialog />
             </DataTemplate>
 
             <ControlTemplate x:Key="GlobalValidationErrorTemplate">

@@ -16,6 +16,7 @@ public static class DependenciesInjection
     public static WebApplicationBuilder AddChatHubServices(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
+        var configuration = builder.Configuration;
         var host = builder.Host;
 
         services.AddCommonInfrastructureServices("SignalRHub");
@@ -24,7 +25,7 @@ public static class DependenciesInjection
 
         services.AddHttpContextAccessor();
 
-        services.AddCustomAuthentication(HUB_ENDPOINT);
+        services.AddCustomAuthentication(configuration, HUB_ENDPOINT);
 
         services.AddSignalR(options =>
         {
@@ -34,6 +35,17 @@ public static class DependenciesInjection
         .AddNewtonsoftJsonProtocol(options =>
         {
             options.PayloadSerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        });
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("CorsPolicy", builder =>
+                builder
+                    .SetIsOriginAllowed(_ => true)  // allow any origin
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+            );
         });
 
         builder.WebHost.ConfigureKestrel(options =>
@@ -49,8 +61,8 @@ public static class DependenciesInjection
 
     public static WebApplication UseChatHubService(this WebApplication app)
     {
-        // Set endpoint for a chat hub
         app.UseRouting();
+        app.UseCors("AllowAll"); // Enable CORS
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapHub<HubServer>(HUB_ENDPOINT);

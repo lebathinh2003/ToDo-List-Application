@@ -12,4 +12,7 @@
 
     // Endpoints cho Task operations
     public const string TaskEndPoint = "tasks"; // Ví dụ: /tasks, /tasks/{id}
+
+    // Endpoints cho Websocket Hub server
+    public const string HubEndPoint = "hub-server";
 }

@@ -5,6 +5,7 @@ using SignalRHub.DTOs;
 using Contract.Interfaces;
 using SignalRHub.Interfaces;
 using SignalRHub.Constants;
+using System.Security.Claims;
 
 namespace SignalRHub.Hubs;
 
@@ -28,38 +29,25 @@ public class HubServer : Hub<IHubClient>
     // The url would be like "https://yourhubURL:port?userId=abc&access_token=abc"
     public override async Task OnConnectedAsync()
     {
-        Console.WriteLine("Connected");
-        var userId = _httpContextAccessor.HttpContext?.Request.Query["userId"].ToString();
-        try
+        var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                var RequestUrl = Context.GetHttpContext()?.Request.GetDisplayUrl() ?? "Unknown";
-                Console.WriteLine($"Service with url {RequestUrl} has connected to signalR successfully!");
-            }
-            else
-            {
-                Console.WriteLine($"user with id {userId} has connected to signalR successfully!");
-                await ConnectWithUserIdAsync(Guid.Parse(userId));
-                if (Context.User != null)
-                {
-                    var roleType = Context.User.Claims.FirstOrDefault(c => c.Type == "role");
-                    if (roleType != null && roleType.Value == "Staff")
-                    {
-                        _memoryTracker.UserConnected(userId);
-                        Console.WriteLine($"Trigger event in client: number:" + _memoryTracker.OnlineUserNumber);
-                        await Clients.Group(ROLE_BASED_GROUP.ADMIN).ReceiveOnlineUserNumber(_memoryTracker.OnlineUserNumber);
-                    }
+            Console.WriteLine($"User {userId} connected");
+            await ConnectWithUserIdAsync(userId);
 
-                }
+            // Role-based logic (e.g., track online staff)
+            var roleClaim = Context.User?.FindFirst(ClaimTypes.Role);
+            if (roleClaim?.Value == "Staff")
+            {
+                _memoryTracker.UserConnected(userId.ToString());
+                await Clients.Group(ROLE_BASED_GROUP.ADMIN)
+                    .ReceiveOnlineUserNumber(_memoryTracker.OnlineUserNumber);
             }
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Context.Abort(); // Terminate unauthenticated connections
         }
-
-        await base.OnConnectedAsync();
     }
     public override async Task OnDisconnectedAsync(Exception? exception)
     {

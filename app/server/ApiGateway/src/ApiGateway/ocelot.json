@@ -89,6 +89,18 @@
             }
         },
         {
+            "DownstreamPathTemplate": "/hub-server/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7000
+                }
+            ],
+            "UpstreamPathTemplate": "/hub-server/{everything}",
+            "UpstreamHttpMethod": [ "GET", "POST" ]
+        },
+        {
             "DownstreamPathTemplate": "/.well-known/openid-configuration",
             "DownstreamScheme": "http",
             "DownstreamHostAndPorts": [

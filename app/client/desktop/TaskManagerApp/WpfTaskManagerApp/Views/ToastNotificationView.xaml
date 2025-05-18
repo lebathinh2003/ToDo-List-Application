@@ -10,7 +10,7 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewModels:ToastNotificationViewModel, IsDesignTimeCreatable=True}"
              Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"
-             HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,20,20,0" MaxWidth="380" MinWidth="300"
+             HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,25,25" MaxWidth="380" MinWidth="300"
              d:DesignHeight="80">
     <UserControl.Resources>
         <Style TargetType="Border" x:Key="ToastBorderStyle">
@@ -113,15 +113,27 @@
 
     </UserControl.Resources>
 
-    <Border Style="{StaticResource ToastBorderStyle}">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="{Binding Message}" Style="{StaticResource ToastMessageStyle}"/>
-            <Button Grid.Column="1" Command="{Binding HideCommand}" Style="{StaticResource CloseToastButtonStyle}"
-                    ToolTip="Close"/>
-        </Grid>
-    </Border>
+    <Button Command="{Binding NotificationClickedCommand}" 
+            Background="Transparent" BorderThickness="0" Padding="0"
+            Cursor="Hand"
+            IsEnabled="{Binding NotificationClickedCommand.CanExecute}"
+            Focusable="False">
+        <Button.Template>
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter/>
+            </ControlTemplate>
+        </Button.Template>
+
+        <Border Style="{StaticResource ToastBorderStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding Message}" Style="{StaticResource ToastMessageStyle}" Margin="0,0,10,0"/>
+                <Button Grid.Column="1" Command="{Binding HideCommand}" Style="{StaticResource CloseToastButtonStyle}"
+                        ToolTip="Close" Focusable="True" IsTabStop="False"/>
+            </Grid>
+        </Border>
+    </Button>
 </UserControl>

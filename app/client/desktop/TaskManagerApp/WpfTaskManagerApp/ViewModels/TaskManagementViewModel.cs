@@ -600,6 +600,23 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public void UpdateTaskInList(TaskItem updatedTask)
+    {
+        var taskInList = Tasks.FirstOrDefault(t => t.Id == updatedTask.Id);
+        if (taskInList != null)
+        {
+            // Cập nhật các thuộc tính của taskInList từ updatedTask
+            // Điều này sẽ tự động cập nhật UI nếu TaskItem implement INotifyPropertyChanged
+            taskInList.Title = updatedTask.Title;
+            taskInList.Description = updatedTask.Description;
+            taskInList.Status = updatedTask.Status;
+            taskInList.AssigneeId = updatedTask.AssigneeId;
+            taskInList.AssigneeName = updatedTask.AssigneeName;
+            taskInList.DueDate = updatedTask.DueDate;
+            taskInList.IsActive = updatedTask.IsActive;
+        }
+    }
+
     public override void Dispose()
     {
         if (_signalRService != null)

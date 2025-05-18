@@ -51,6 +51,7 @@ var app = builder.Build();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseWebSockets();
 app.UseOcelot().Wait();    // Ocelot processes the request
 
 app.Run();
