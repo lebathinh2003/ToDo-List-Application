@@ -65,5 +65,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.UseGrpcServices();
+await app.UseSignalRServiceAsync();
 
 app.Run();

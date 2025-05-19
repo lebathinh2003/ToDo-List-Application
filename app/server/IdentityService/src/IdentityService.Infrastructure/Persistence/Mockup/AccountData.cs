@@ -5,8 +5,15 @@ public static class AccountData
     public static readonly List<Account> Data = [
         new Account{
         Id = Guid.Parse("52b2bde6-0e51-4277-979a-42b5ad86d1ae"),
-        Username = "admin",
-        Email = "admin@email.com",
+        Username = "admin1",
+        Email = "admin1@email.com",
+        Password = "Pass123$",
+        Role = "Admin"
+    },
+    new Account{
+        Id = Guid.Parse("873926ca-d150-4a84-bd2f-987ff6316971"),
+        Username = "admin2",
+        Email = "admin2@email.com",
         Password = "Pass123$",
         Role = "Admin"
     },

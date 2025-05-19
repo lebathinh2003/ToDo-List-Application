@@ -115,7 +115,7 @@
 
     <Button Command="{Binding NotificationClickedCommand}" 
             Background="Transparent" BorderThickness="0" Padding="0"
-            Cursor="Hand"
+            Cursor="{Binding AssociatedTask, Converter={StaticResource NullToCursorConverter}, ConverterParameter=Arrow}" 
             IsEnabled="{Binding NotificationClickedCommand.CanExecute}"
             Focusable="False">
         <Button.Template>

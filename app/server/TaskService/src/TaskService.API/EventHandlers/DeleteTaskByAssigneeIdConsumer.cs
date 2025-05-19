@@ -7,11 +7,11 @@ using TaskService.Application.Tasks.Commands;
 namespace TaskService.API.EventHandlers;
 [QueueName(RabbitMQConstant.QUEUE.NAME.DELETE_USER,
 exchangeName: RabbitMQConstant.EXCHANGE.NAME.DELETE_USER)]
-public class UpdateTotalRecipeConsumer : IConsumer<DeleteUserEvent>
+public class DeleteTaskByAssigneeIdConsumer : IConsumer<DeleteUserEvent>
 {
     private readonly ISender _sender;
 
-    public UpdateTotalRecipeConsumer(ISender sender)
+    public DeleteTaskByAssigneeIdConsumer(ISender sender)
     {
         _sender = sender;
     }

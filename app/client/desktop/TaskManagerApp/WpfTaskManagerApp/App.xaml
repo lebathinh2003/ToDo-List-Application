@@ -19,6 +19,8 @@
             <converters:BooleanToStatusConverter x:Key="BooleanToStatusConverter"/>
             <converters:StatusToBrushConverter x:Key="StatusToBrushConverter"/>
             <converters:TaskStatusToStringConverter x:Key="TaskStatusToStringConverter"/>
+            <converters:TaskStatusToBrushConverter x:Key="TaskStatusToBrushConverter"/>
+            <converters:NullToCursorConverter x:Key="NullToCursorConverter"/>
 
             <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
                 <views:LoginView/>

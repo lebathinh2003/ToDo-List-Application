@@ -17,6 +17,8 @@ public static class DependencyInjection
 
         services.AddCommonInfrastructureServices("UserService.API");
 
+        services.AddSignalRService();
+
         using (var serviceProvider = services.BuildServiceProvider())
         {
             var mockupData = serviceProvider.GetRequiredService<MockupData>();

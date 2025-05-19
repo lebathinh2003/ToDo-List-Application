@@ -7,17 +7,15 @@ namespace Contract.Services;
 
 public sealed class SignalRService : ISignalRService
 {
-    private readonly ILogger<SignalRService> _logger;
     public HubConnection HubConnection { get; init; }
 
-    public SignalRService(ILogger<SignalRService> logger)
+    public SignalRService()
     {
-        _logger = logger;
-        var webSocketUri = "CONSUL_SIGNALR";
-        _logger.LogInformation("Connect to chat hub " + webSocketUri);
+        var webSocketUri = "http://localhost:7000/hub-server";
+        Console.WriteLine("Connect to chat hub " + webSocketUri);
 
         HubConnection = new HubConnectionBuilder()
-            .WithUrl($"{webSocketUri}app-hub")
+            .WithUrl($"{webSocketUri}")
             .WithAutomaticReconnect(
             [
                 TimeSpan.Zero,
@@ -38,21 +36,21 @@ public sealed class SignalRService : ISignalRService
 
     public async Task StartConnectionAsync()
     {
-        _logger.LogInformation("Connecting to signalR");
+        Console.WriteLine("Connecting to signalR");
         await HubConnection.StartAsync();
-        _logger.LogInformation("SignalR connected");
+        Console.WriteLine("SignalR connected");
     }
 
     public async Task StopConnectionAsync()
     {
         await HubConnection.StopAsync();
-        _logger.LogInformation("SignalR disconnected");
+        Console.WriteLine("SignalR disconnected");
     }
     public async Task InvokeAction<T>(string action, T obj)
     {
-        _logger.LogInformation($"Begin to invoke {action} with DTO: ${JsonConvert.SerializeObject(obj)}");
+        Console.WriteLine($"Begin to invoke {action} with DTO: ${JsonConvert.SerializeObject(obj)}");
         await HubConnection.InvokeAsync(action, obj);
-        _logger.LogInformation($"Done invoking action");
+        Console.WriteLine($"Done invoking action");
     }
 
     public async Task InvokeAction(string action)

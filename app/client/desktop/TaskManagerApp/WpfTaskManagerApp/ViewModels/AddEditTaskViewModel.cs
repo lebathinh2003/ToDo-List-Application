@@ -62,7 +62,7 @@ public class AddEditTaskViewModel : ViewModelBase
     }
 
     private string _assigneeSearchText = string.Empty;
-    private bool _isUpdatingTextFromSelection = false; // Cờ để biết Text đang được cập nhật từ SelectedItem
+    private bool _isUpdatingTextFromSelection = false;
 
     public string AssigneeSearchText
     {

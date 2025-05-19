@@ -1,4 +1,6 @@
 ﻿using Contract.Common;
+using Contract.Event.UserEvent;
+using Contract.Interfaces;
 using IdentityProto;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +16,13 @@ public class RestoreUserCommandHandler : IRequestHandler<RestoreUserCommand, Res
 {
     private readonly IApplicationDbContext _context;
     private readonly GrpcIdentity.GrpcIdentityClient _grpcIdentityClient;
+    private readonly IServiceBus _serviceBus;
 
-    public RestoreUserCommandHandler(IApplicationDbContext context, GrpcIdentity.GrpcIdentityClient grpcIdentityClient)
+    public RestoreUserCommandHandler(IApplicationDbContext context, GrpcIdentity.GrpcIdentityClient grpcIdentityClient, IServiceBus serviceBus)
     {
         _context = context;
         _grpcIdentityClient = grpcIdentityClient;
+        _serviceBus = serviceBus;
     }
 
     public async Task<Result> Handle(RestoreUserCommand request, CancellationToken cancellationToken)
@@ -62,6 +66,11 @@ public class RestoreUserCommandHandler : IRequestHandler<RestoreUserCommand, Res
             _context.Users.Update(user);
 
             await _context.Instance.SaveChangesAsync(cancellationToken);
+
+            await _serviceBus.Publish(new RestoreUserEvent
+            {
+                UserId = user.Id
+            });
 
             return Result.Success();
         }

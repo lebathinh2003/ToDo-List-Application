@@ -249,13 +249,14 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             "Title",
             "DueDate",
             "AssigneeName",
-            "Status"
+            "Status",
+            "CreatedAt"
         };
         SortOrders = new ObservableCollection<string> {
             "asc",
             "desc"
         };
-        SortBy = "DueDate";
+        SortBy = "CreatedAt";
         Tasks = new ObservableCollection<TaskItem> {
             new TaskItem(Guid.NewGuid(), "Design UI for Login", "Complete the UI design for the login page", TaskStatus.InProgress) {
                 AssigneeName = "Designer A", DueDate = DateTime.Now.AddDays(2)
@@ -279,10 +280,10 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             await LoadTasksAsync();
         }, _ => !IsLoading); // Cho phép search ở design-time
         RefreshCommand = new RelayCommand(async _ => await LoadTasksAsync(), _ => !IsLoading); // Cho phép refresh ở design-time
-        FirstPageCommand = new RelayCommand(async _ => { }, _ => false);
-        PreviousPageCommand = new RelayCommand(async _ => { }, _ => false);
-        NextPageCommand = new RelayCommand(async _ => { }, _ => false);
-        LastPageCommand = new RelayCommand(async _ => { }, _ => false);
+        FirstPageCommand = new RelayCommand(_ => { }, _ => false);
+        PreviousPageCommand = new RelayCommand(_ => { }, _ => false);
+        NextPageCommand = new RelayCommand(_ => { }, _ => false);
+        LastPageCommand = new RelayCommand(_ => { }, _ => false);
         OnPropertyChanged(nameof(CanAdminManageTasks));
         UpdatePaginationCommandsCanExecute();
     }
@@ -307,13 +308,14 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             "Title",
             "DueDate",
             "AssigneeName",
-            "Status"
+            "Status",
+            "CreatedAt"
         };
         SortOrders = new ObservableCollection<string> {
             "asc",
             "desc"
         };
-        _sortBy = "DueDate";
+        _sortBy = "CreatedAt";
         _sortOrder = "desc";
 
         AddTaskCommand = new RelayCommand(async _ => await OpenAddEditTaskDialog(null), _ => CanAdminManageTasks && !IsLoading);
@@ -484,7 +486,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             Title = addEditTaskViewModel.WindowTitle,
             Content = dialogView,
             Width = 520,
-            Height = 650,
+            Height = 750,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = Application.Current.MainWindow,
             ResizeMode = ResizeMode.NoResize,

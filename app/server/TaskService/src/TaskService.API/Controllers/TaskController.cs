@@ -1,4 +1,5 @@
-﻿using Contract.DTOs;
+﻿using System.Security.Claims;
+using Contract.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,8 +26,14 @@ public class TasksController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest createTaskRequest)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
         var result = await _sender.Send(new CreateTaskCommand
         {
+            AdminId = Guid.Parse(adminId),
             AssigneeId = createTaskRequest.AssigneeId,
             Status = createTaskRequest.Status,
             Description = createTaskRequest.Description,
@@ -77,8 +84,16 @@ public class TasksController : ControllerBase
             return BadRequest("Id is null.");
         }
 
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
+
+
         var result = await _sender.Send(new UpdateTaskCommand
         {
+            AdminId = Guid.Parse(adminId),
             Id = id,
             AssigneeId = updateTaskRequest.AssigneeId,
             Status = updateTaskRequest.Status,
@@ -115,9 +130,15 @@ public class TasksController : ControllerBase
     [HttpDelete("delete/id/{id}")]
     public async Task<IActionResult> DeleteTask(Guid id)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
         var result = await _sender.Send(new DeleteTaskCommand
         {
             TaskId = id,
+            AdminId = Guid.Parse(adminId),
         });
         result.ThrowIfFailure();
         return Ok();
@@ -127,9 +148,15 @@ public class TasksController : ControllerBase
     [HttpPost("restore/id/{id}")]
     public async Task<IActionResult> RestoreTask(Guid id)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
         var result = await _sender.Send(new RestoreTaskCommand
         {
             TaskId = id,
+            AdminId = Guid.Parse(adminId),
         });
         result.ThrowIfFailure();
         return Ok();

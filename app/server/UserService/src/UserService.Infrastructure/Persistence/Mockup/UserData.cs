@@ -9,6 +9,14 @@ public static class UserData
         Address = "123 Admin St, Hanoi",
         IsAdmin = true
     },
+
+    new UserMockup{
+        Id = Guid.Parse("873926ca-d150-4a84-bd2f-987ff6316971"),
+        Fullname = "Peace Bui",
+        Address = "138 Admin St, Ho Chi Minh",
+        IsAdmin = true
+    },
+
     new UserMockup{
         Id = Guid.Parse("04b9f052-a44f-4b03-8f1d-4142c987a0a8"),
         Fullname = "Bob Nguyen",

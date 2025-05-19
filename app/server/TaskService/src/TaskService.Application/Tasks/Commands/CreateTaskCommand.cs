@@ -1,4 +1,7 @@
 ﻿using Contract.Common;
+using Contract.Constants;
+using Contract.DTOs.SignalRDTOs;
+using Contract.Interfaces;
 using MediatR;
 using TaskService.Application.DTOs;
 using TaskService.Domain.Errors;
@@ -9,6 +12,7 @@ using TaskStatus = TaskService.Domain.Models.TaskStatus;
 namespace TaskService.Application.Tasks.Commands;
 public record CreateTaskCommand : IRequest<Result<TaskDTO?>>
 {
+    public Guid AdminId { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
     public Guid AssigneeId { get; set; }
@@ -21,18 +25,21 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
 {
     private readonly IApplicationDbContext _context;
     private readonly GrpcUser.GrpcUserClient _grpcUserClient;
+    private readonly ISignalRService _signalRService;
 
-    public CreateTaskCommandHandler(IApplicationDbContext context, GrpcUser.GrpcUserClient grpcUserClient)
+    public CreateTaskCommandHandler(IApplicationDbContext context, GrpcUser.GrpcUserClient grpcUserClient, ISignalRService signalRService)
     {
         _context = context;
         _grpcUserClient = grpcUserClient;
+        _signalRService = signalRService;
     }
 
     public async Task<Result<TaskDTO?>> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
     {
         try {
 
-            if(request.AssigneeId == Guid.Empty || 
+            if(request.AssigneeId == Guid.Empty ||
+                request.AdminId == Guid.Empty ||
                 string.IsNullOrEmpty(request.Title) ||
                 string.IsNullOrEmpty(request.Description) ||
                 string.IsNullOrEmpty(request.Status) ||
@@ -81,6 +88,24 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
 
             _context.Tasks.Add(task);
             await _context.Instance.SaveChangesAsync(cancellationToken);
+
+            await _signalRService.InvokeAction(SignalRAction.PushNewTaskNotification.ToString(), new SignalRTaskItemWithRecipentsDTO {
+                TaskItem = new SignalRTaskItemDTO
+                {
+                    Id = task.Id,
+                    AssigneeId = task.AssigneeId,
+                    AssigneeName = response.FullName,
+                    AssigneeUsername = response.Usrname,
+                    Title = task.Title,
+                    Description = task.Description,
+                    Status = task.Status.ToString(),
+                    CreatedDate = task.CreatedAt,
+                    DueDate = task.DueDate,
+                    IsActive = task.IsActive,
+                },
+                ExcludeRecipients = new List<Guid> { request.AdminId },
+                Recipients = new List<Guid> { task.AssigneeId },
+            });
 
             return Result<TaskDTO?>.Success(result);
         }

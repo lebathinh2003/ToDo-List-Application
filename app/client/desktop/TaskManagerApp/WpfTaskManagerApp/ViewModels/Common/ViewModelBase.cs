@@ -48,7 +48,7 @@ public abstract class ViewModelBase : INotifyPropertyChanged, INotifyDataErrorIn
             var propertiesWithErrors = _errorsByPropertyName.Keys.ToList();
             _errorsByPropertyName.Clear();
             foreach (var propName in propertiesWithErrors) { OnErrorsChanged(propName); }
-            OnErrorsChanged(null);
+            OnErrorsChanged(null!);
         }
         else if (_errorsByPropertyName.ContainsKey(propertyName))
         { _errorsByPropertyName.Remove(propertyName); OnErrorsChanged(propertyName); }

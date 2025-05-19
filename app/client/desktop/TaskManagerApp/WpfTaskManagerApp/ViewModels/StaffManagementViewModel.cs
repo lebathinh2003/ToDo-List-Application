@@ -196,13 +196,14 @@ public class StaffManagementViewModel : ViewModelBase
             "FullName",
             "Username",
             "Email",
-            "Role"
+            "Role",
+            "CreatedAt",
         };
         SortOrders = new ObservableCollection<string> {
             "asc",
             "desc"
         };
-        SortBy = "FullName";
+        SortBy = "CreatedAt";
         StaffList = new ObservableCollection<User> {
             new User(Guid.NewGuid(), "d.admin", "a@d.c", UserRole.Admin, "D Admin"),
             new User(Guid.NewGuid(), "d.staff", "s@d.c", UserRole.Staff, "D Staff", isActive: false)
@@ -211,17 +212,17 @@ public class StaffManagementViewModel : ViewModelBase
         CurrentPage = 1;
         Limit = 10;
         IsLoading = false;
-        AddStaffCommand = new RelayCommand(async _ => { }, _ => false);
-        EditStaffCommand = new RelayCommand<User>(async _ => { }, _ => false);
-        DeleteStaffCommand = new RelayCommand<User>(async _ => { }, _ => false);
-        RestoreStaffCommand = new RelayCommand<User>(async _ => { }, _ => false);
-        AssignTaskCommand = new RelayCommand<User>(async _ => { }, _ => false);
-        SearchCommand = new RelayCommand(async _ => { }, _ => false);
-        RefreshCommand = new RelayCommand(async _ => { }, _ => false);
-        FirstPageCommand = new RelayCommand(async _ => { }, _ => false);
-        PreviousPageCommand = new RelayCommand(async _ => { }, _ => false);
-        NextPageCommand = new RelayCommand(async _ => { }, _ => false);
-        LastPageCommand = new RelayCommand(async _ => { }, _ => false);
+        AddStaffCommand = new RelayCommand( _ => { }, _ => false);
+        EditStaffCommand = new RelayCommand<User>( _ => { }, _ => false);
+        DeleteStaffCommand = new RelayCommand<User>( _ => { }, _ => false);
+        RestoreStaffCommand = new RelayCommand<User>(_ => { }, _ => false);
+        AssignTaskCommand = new RelayCommand<User>(_ => { }, _ => false);
+        SearchCommand = new RelayCommand(_ => { }, _ => false);
+        RefreshCommand = new RelayCommand(_ => { }, _ => false);
+        FirstPageCommand = new RelayCommand(_ => { }, _ => false);
+        PreviousPageCommand = new RelayCommand(_ => { }, _ => false);
+        NextPageCommand = new RelayCommand(_ => { }, _ => false);
+        LastPageCommand = new RelayCommand(_ => { }, _ => false);
         UpdatePaginationCommandsCanExecute();
     }
     public StaffManagementViewModel(IUserService userService, IServiceProvider serviceProvider, IAuthenticationService authenticationService, ToastNotificationViewModel toastViewModel)
@@ -234,13 +235,14 @@ public class StaffManagementViewModel : ViewModelBase
             "FullName",
             "Username",
             "Email",
-            "Role"
+            "Role",
+            "CreatedAt",
         };
         SortOrders = new ObservableCollection<string> {
             "asc",
             "desc"
         };
-        _sortBy = "FullName";
+        _sortBy = "CreatedAt";
         _sortOrder = "asc";
         AddStaffCommand = new RelayCommand(async _ => await OpenAddEditStaffDialog(null), _ => !IsLoading);
         EditStaffCommand = new RelayCommand<User>(async (user) => await OpenAddEditStaffDialog(user), (user) => user != null && !IsLoading);
@@ -384,6 +386,7 @@ public class StaffManagementViewModel : ViewModelBase
     }
     private async Task OpenAddEditStaffDialog(User? userToEdit)
     {
+        await Task.Delay(1);
         if (_serviceProvider == null || _toastViewModel == null)
         {
             _toastViewModel?.Show("Services unavailable.", ToastType.Error);

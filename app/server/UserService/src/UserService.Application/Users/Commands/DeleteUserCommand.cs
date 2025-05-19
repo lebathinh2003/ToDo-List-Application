@@ -1,4 +1,5 @@
 ﻿using Contract.Common;
+using Contract.Constants;
 using Contract.Event.UserEvent;
 using Contract.Interfaces;
 using IdentityProto;
@@ -18,12 +19,14 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
     private readonly IApplicationDbContext _context;
     private readonly IServiceBus _serviceBus;
     private readonly GrpcIdentity.GrpcIdentityClient _grpcIdentityClient;
+    private readonly ISignalRService _signalRService;
 
-    public DeleteUserCommandHandler(IApplicationDbContext context, IServiceBus serviceBus, GrpcIdentityClient grpcIdentityClient)
+    public DeleteUserCommandHandler(IApplicationDbContext context, IServiceBus serviceBus, GrpcIdentityClient grpcIdentityClient, ISignalRService signalRService)
     {
         _context = context;
         _serviceBus = serviceBus;
         _grpcIdentityClient = grpcIdentityClient;
+        _signalRService = signalRService;
     }
 
     public async Task<Result> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
@@ -72,6 +75,8 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             {
                 UserId = user.Id
             });
+
+            await _signalRService.InvokeAction(SignalRAction.TriggerLogout.ToString(), user.Id);
 
             return Result.Success();
         }

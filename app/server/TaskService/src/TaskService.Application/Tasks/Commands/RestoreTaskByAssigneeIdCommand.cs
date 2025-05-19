@@ -7,23 +7,23 @@ using Microsoft.EntityFrameworkCore;
 using TaskService.Domain.Errors;
 using TaskService.Domain.Interfaces;
 namespace TaskService.Application.Tasks.Commands;
-public record DeleteTaskByAssigneeIdCommand : IRequest<Result>
+public record RestoreTaskByAssigneeIdCommand : IRequest<Result>
 {
     public Guid UserId { get; set; }
     public Guid AdminId { get; set; }
 }
-public class DeleteTaskByAssigneeIdCommandHandler : IRequestHandler<DeleteTaskByAssigneeIdCommand, Result>
+public class RestoreTaskByAssigneeIdCommandHandler : IRequestHandler<RestoreTaskByAssigneeIdCommand, Result>
 {
     private readonly IApplicationDbContext _context;
     private readonly ISignalRService _signalRService;
 
-    public DeleteTaskByAssigneeIdCommandHandler(IApplicationDbContext context, ISignalRService signalRService)
+    public RestoreTaskByAssigneeIdCommandHandler(IApplicationDbContext context, ISignalRService signalRService)
     {
         _context = context;
         _signalRService = signalRService;
     }
 
-    public async Task<Result> Handle(DeleteTaskByAssigneeIdCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(RestoreTaskByAssigneeIdCommand request, CancellationToken cancellationToken)
     {
         try {
             var tasks = await _context.Tasks.Where(x => x.AssigneeId == request.UserId).ToListAsync(cancellationToken);
@@ -32,7 +32,7 @@ public class DeleteTaskByAssigneeIdCommandHandler : IRequestHandler<DeleteTaskBy
             {
                 foreach (var task in tasks)
                 {
-                    task.IsActive = false;
+                    task.IsActive = true;
                 }
                 _context.Tasks.UpdateRange(tasks);
                 await _context.Instance.SaveChangesAsync();
@@ -48,7 +48,7 @@ public class DeleteTaskByAssigneeIdCommandHandler : IRequestHandler<DeleteTaskBy
         }
         catch (Exception ex)
         {
-            return Result.Failure(TaskError.DeleteTaskFail, ex.Message);
+            return Result.Failure(TaskError.RestoreTaskFail, ex.Message);
         }
     }
 }

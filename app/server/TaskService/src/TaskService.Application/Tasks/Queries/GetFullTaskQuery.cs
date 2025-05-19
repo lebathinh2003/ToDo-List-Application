@@ -56,7 +56,7 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
 
             if (request.AssigneeId != null && request.AssigneeId != Guid.Empty)
             {
-                taskQuery = taskQuery.Where(t => t.AssigneeId == request.AssigneeId);
+                taskQuery = taskQuery.Where(t => t.AssigneeId == request.AssigneeId && t.IsActive == true);
             }
 
 

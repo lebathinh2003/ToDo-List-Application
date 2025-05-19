@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net;
+using System.Net.WebSockets;
 
 namespace Contract.Middleware;
 
@@ -38,6 +39,11 @@ public class GlobalHandlingErrorMiddleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = errorDTO.Status;
             await context.Response.WriteAsync(jsonResponse);
+        }
+        catch (WebSocketException ex) when (ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely ||
+                                        ex.WebSocketErrorCode == WebSocketError.InvalidState)
+        {
+            Console.WriteLine("[Warning] WebSocket closed prematurely, ignoring.");
         }
         catch (Exception ex)
         {

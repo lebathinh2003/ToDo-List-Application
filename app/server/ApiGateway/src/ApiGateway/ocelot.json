@@ -98,7 +98,8 @@
                 }
             ],
             "UpstreamPathTemplate": "/hub-server/{everything}",
-            "UpstreamHttpMethod": [ "GET", "POST" ]
+            "UpstreamHttpMethod": [ "GET", "POST" ],
+            "UseWebSockets": true
         },
         {
             "DownstreamPathTemplate": "/.well-known/openid-configuration",

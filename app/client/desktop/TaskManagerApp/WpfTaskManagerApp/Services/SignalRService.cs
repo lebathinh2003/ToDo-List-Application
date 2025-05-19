@@ -2,7 +2,9 @@
 using System.Windows;
 using Microsoft.AspNetCore.SignalR.Client;
 using WpfTaskManagerApp.Configs;
+using WpfTaskManagerApp.DTOs;
 using WpfTaskManagerApp.Models;
+using WpfTaskManagerApp.Utils;
 
 namespace WpfTaskManagerApp.Services;
 public class SignalRService : ISignalRService
@@ -13,10 +15,11 @@ public class SignalRService : ISignalRService
 
     public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
-    // Event cho staff khi được gán task mới
     public event Action<TaskItem>? NewTaskAssigned;
-    // Event chung khi một task được cập nhật (status, title, etc.)
     public event Action<TaskItem>? TaskStatusUpdated;
+    public event Action<string?>? ForceLogoutReceived;
+    public event Action? ReloadReceived;
+
 
     public SignalRService(ITokenProvider tokenProvider)
     {
@@ -39,25 +42,36 @@ public class SignalRService : ISignalRService
 
         // Lắng nghe sự kiện "ReceiveNewTaskAssignment" từ server
         // Server sẽ gửi TaskItem khi một task mới được gán cho user hiện tại
-        _hubConnection.On<TaskItem>("ReceiveNewTaskAssignment", (newTask) =>
+        _hubConnection.On<SignalRTaskItemDTO>("ReceiveNewTaskAssignment", (newTask) =>
         {
             Debug.WriteLine($"SignalR: Received new task assignment: {newTask.Title}");
-            Application.Current.Dispatcher.Invoke(() => NewTaskAssigned?.Invoke(newTask));
+            Application.Current.Dispatcher.Invoke(() => NewTaskAssigned?.Invoke(TaskItemMapper.FromDTO(newTask)));
         });
 
         // Lắng nghe sự kiện "ReceiveTaskUpdate" từ server
         // Server sẽ gửi TaskItem đã được cập nhật
-        _hubConnection.On<TaskItem>("ReceiveTaskUpdate", (updatedTask) =>
+        _hubConnection.On<SignalRTaskItemDTO>("ReceiveTaskUpdate", (updatedTask) =>
         {
             Debug.WriteLine($"SignalR: Received task update: {updatedTask.Title}, Status: {updatedTask.Status}");
-            Application.Current.Dispatcher.Invoke(() => TaskStatusUpdated?.Invoke(updatedTask));
+            Application.Current.Dispatcher.Invoke(() => TaskStatusUpdated?.Invoke(TaskItemMapper.FromDTO(updatedTask)));
+        });
+
+        _hubConnection.On<string?>("ReceiveForceLogout", (reason) =>
+        {
+            Debug.WriteLine($"SignalR: Received ForceLogout. Reason: {reason ?? "No reason provided."}");
+            Application.Current.Dispatcher.Invoke(() => ForceLogoutReceived?.Invoke(reason));
+        });
+
+        _hubConnection.On("ReceiveForceReload", () =>
+        {
+            Debug.WriteLine($"SignalR: Received ReceiveForceReload.");
+            Application.Current.Dispatcher.Invoke(() => ReloadReceived?.Invoke());
         });
 
         _hubConnection.Closed += async (error) =>
         {
             Debug.WriteLine($"SignalR: Connection closed. Error: {error?.Message}");
-            // Có thể thử kết nối lại sau một khoảng thời gian ngắn
-            await Task.Delay(10 * 1000);
+            await Task.Delay(3 * 1000);
             await ConnectAsync();
         };
     }

@@ -30,16 +30,13 @@ public class ToastNotificationViewModel : ViewModelBase
         set => SetProperty(ref _toastType, value);
     }
 
-    // ***** THÊM THÔNG TIN TASK VÀ ACTION CHO TOAST *****
     private TaskItem? _associatedTask;
     public TaskItem? AssociatedTask
     {
         get => _associatedTask;
         private set => SetProperty(ref _associatedTask, value);
     }
-
     private Action<TaskItem?>? _clickAction;
-    // ***** KẾT THÚC THÊM *****
 
     private DispatcherTimer? _timer;
     public ICommand HideCommand
@@ -49,7 +46,7 @@ public class ToastNotificationViewModel : ViewModelBase
     public ICommand NotificationClickedCommand
     {
         get;
-    } // Command khi toast được click
+    }
 
     public ToastNotificationViewModel()
     {
@@ -58,7 +55,7 @@ public class ToastNotificationViewModel : ViewModelBase
         NotificationClickedCommand = new RelayCommand(_ => ExecuteClickAction(), _ => AssociatedTask != null && _clickAction != null);
     }
 
-    // ***** CẬP NHẬT PHƯƠNG THỨC Show *****
+    // Phương thức Show này vẫn có thể được dùng cho các thông báo toast trong ứng dụng không phải từ SignalR
     public void Show(string message, ToastType type, int durationInSeconds = 5, TaskItem? task = null, Action<TaskItem?>? clickAction = null)
     {
         Message = message;
@@ -66,7 +63,7 @@ public class ToastNotificationViewModel : ViewModelBase
         AssociatedTask = task;
         _clickAction = clickAction;
         IsVisible = true;
-        (NotificationClickedCommand as RelayCommand)?.RaiseCanExecuteChanged(); // Cập nhật CanExecute
+        (NotificationClickedCommand as RelayCommand)?.RaiseCanExecuteChanged();
 
         _timer?.Stop();
         _timer = new DispatcherTimer
@@ -80,21 +77,18 @@ public class ToastNotificationViewModel : ViewModelBase
         };
         _timer.Start();
     }
-    // ***** KẾT THÚC CẬP NHẬT *****
-
     private void ExecuteClickAction()
     {
         if (AssociatedTask != null && _clickAction != null)
         {
             _clickAction.Invoke(AssociatedTask);
-            Hide(); // Ẩn toast sau khi click
+            Hide();
         }
     }
-
     public void Hide()
     {
         IsVisible = false;
-        AssociatedTask = null; // Reset task khi ẩn
+        AssociatedTask = null;
         _clickAction = null;
         (NotificationClickedCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }

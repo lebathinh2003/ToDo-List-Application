@@ -1,7 +1,7 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
-using System.Windows.Forms; // Cần thêm tham chiếu System.Windows.Forms.dll
+using WpfTaskManagerApp.Models;
+using WpfTaskManagerApp.ViewModels; // Cần thêm tham chiếu System.Windows.Forms.dll
 // using Application = System.Windows.Application; // Nếu có xung đột tên
 
 namespace WpfTaskManagerApp;
@@ -10,6 +10,7 @@ public partial class MainWindow : Window
 {
     private NotifyIcon? _notifyIcon;
     private bool _isExplicitClose = false; // Cờ để biết có phải là đóng thực sự không
+    private TaskItem? _taskForTrayNotification;
 
     public MainWindow()
     {
@@ -21,17 +22,13 @@ public partial class MainWindow : Window
     {
         _notifyIcon = new NotifyIcon
         {
-            // Bạn cần một file icon .ico trong project và set Build Action là "Resource" hoặc "Content"
-            // Ví dụ: Icon = new System.Drawing.Icon("Assets/app_icon.ico"),
-            // Hoặc dùng icon từ resource:
-            // Icon = System.Drawing.Icon.FromHandle(Properties.Resources.YourAppIcon.GetHicon()),
-            // Tạm thời dùng một icon mặc định nếu chưa có
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = new System.Drawing.Icon("Resources/to_do.ico"),
             Visible = false, // Chỉ hiển thị khi cửa sổ bị ẩn
             Text = "Task Manager Pro"
         };
 
         _notifyIcon.DoubleClick += NotifyIcon_DoubleClick;
+        _notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
 
         var contextMenu = new ContextMenuStrip();
         var showMenuItem = new ToolStripMenuItem("Show Task Manager Pro");
@@ -43,6 +40,20 @@ public partial class MainWindow : Window
         contextMenu.Items.Add(exitMenuItem);
 
         _notifyIcon.ContextMenuStrip = contextMenu;
+        _notifyIcon.Visible = true;
+    }
+
+    public void ShowWindowAndActivate()
+    {
+        this.Show();
+        this.WindowState = WindowState.Normal;
+        this.Activate();
+        if (this.Topmost == false) // Đảm bảo cửa sổ lên trên cùng nếu nó không phải là Topmost
+        {
+            this.Topmost = true;
+            this.Topmost = false;
+        }
+        //if (_notifyIcon != null) _notifyIcon.Visible = true;
     }
 
     private void ShowWindow()
@@ -50,7 +61,7 @@ public partial class MainWindow : Window
         this.Show();
         this.WindowState = WindowState.Normal;
         this.Activate();
-        if (_notifyIcon != null) _notifyIcon.Visible = false;
+        //if (_notifyIcon != null) _notifyIcon.Visible = false;
     }
 
     private void NotifyIcon_DoubleClick(object? sender, EventArgs e)
@@ -61,6 +72,22 @@ public partial class MainWindow : Window
     private void ShowMenuItem_Click(object? sender, EventArgs e)
     {
         ShowWindow();
+    }
+
+    public void ShowTrayNotification(string title, string message, TaskItem? task = null)
+    {
+        _taskForTrayNotification = task; // Lưu task lại để xử lý khi click
+        _notifyIcon?.ShowBalloonTip(5000, title, message, ToolTipIcon.Info);
+    }
+
+    private void NotifyIcon_BalloonTipClicked(object? sender, EventArgs e)
+    {
+        ShowWindowAndActivate();
+        if (_taskForTrayNotification != null && DataContext is MainViewModel mainVm)
+        {
+            mainVm.HandleTrayNotificationActivation(_taskForTrayNotification);
+            _taskForTrayNotification = null; // Reset sau khi xử lý
+        }
     }
 
     private void ExitMenuItem_Click(object? sender, EventArgs e)
@@ -75,11 +102,10 @@ public partial class MainWindow : Window
         {
             e.Cancel = true; // Hủy việc đóng cửa sổ
             this.Hide();     // Ẩn cửa sổ đi
-            if (_notifyIcon != null)
-            {
-                _notifyIcon.Visible = true; // Hiển thị icon ở khay hệ thống
-                _notifyIcon.ShowBalloonTip(1000, "Task Manager Pro", "Application is still running in the background.", ToolTipIcon.Info);
-            }
+            //if (_notifyIcon != null)
+            //{
+            //    _notifyIcon.Visible = true; // Hiển thị icon ở khay hệ thống
+            //}
         }
         else // Nếu là đóng thực sự
         {

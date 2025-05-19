@@ -1,4 +1,7 @@
 ﻿using Contract.Common;
+using Contract.Constants;
+using Contract.DTOs.SignalRDTOs;
+using Contract.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TaskService.Application.DTOs;
@@ -9,6 +12,7 @@ using TaskStatus = TaskService.Domain.Models.TaskStatus;
 namespace TaskService.Application.Tasks.Commands;
 public record UpdateTaskCommand : IRequest<Result<TaskDTO?>>
 {
+    public Guid AdminId { get; set; }
     public Guid Id { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
@@ -22,11 +26,12 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
 {
     private readonly IApplicationDbContext _context;
     private readonly GrpcUser.GrpcUserClient _grpcUserClient;
-
-    public UpdateTaskCommandHandler(IApplicationDbContext context, GrpcUser.GrpcUserClient grpcUserClient)
+    private readonly ISignalRService _signalRService;
+    public UpdateTaskCommandHandler(IApplicationDbContext context, GrpcUser.GrpcUserClient grpcUserClient, ISignalRService signalRService)
     {
         _context = context;
         _grpcUserClient = grpcUserClient;
+        _signalRService = signalRService;
     }
 
     public async Task<Result<TaskDTO?>> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
@@ -34,6 +39,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
         try {
 
             if(request.Id == Guid.Empty ||
+                request.AdminId == Guid.Empty ||
                 request.AssigneeId == Guid.Empty || 
                 string.IsNullOrEmpty(request.Title) ||
                 string.IsNullOrEmpty(request.Description) ||
@@ -49,6 +55,8 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
             {
                 return Result<TaskDTO?>.Failure(TaskError.NotFound, "Task not found");
             }
+
+            var oldAssigneeId = task.AssigneeId;
 
             task.AssigneeId = request.AssigneeId;
             task.Title = request.Title;
@@ -85,6 +93,27 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
 
             _context.Tasks.Update(task);
             await _context.Instance.SaveChangesAsync(cancellationToken);
+
+            await _signalRService.InvokeAction(SignalRAction.PushTaskUpdateNotification.ToString(), new SignalRTaskItemWithRecipentsDTO
+            {
+                TaskItem = new SignalRTaskItemDTO
+                {
+                    Id = task.Id,
+                    AssigneeId = task.AssigneeId,
+                    AssigneeName = response.FullName,
+                    AssigneeUsername = response.Usrname,
+                    Title = task.Title,
+                    Description = task.Description,
+                    Status = task.Status.ToString(),
+                    CreatedDate = task.CreatedAt,
+                    DueDate = task.DueDate,
+                    IsActive = task.IsActive,
+                },
+                Recipients = (new HashSet<Guid>() { task.AssigneeId, oldAssigneeId }).ToList(),
+                ExcludeRecipients = new List<Guid>() { request.AdminId }
+            });
+                
+
             return Result<TaskDTO?>.Success(result);
         }
         catch (Exception ex)

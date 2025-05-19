@@ -6,6 +6,7 @@ using Contract.Interfaces;
 using SignalRHub.Interfaces;
 using SignalRHub.Constants;
 using System.Security.Claims;
+using Contract.DTOs.SignalRDTOs;
 
 namespace SignalRHub.Hubs;
 
@@ -34,19 +35,11 @@ public class HubServer : Hub<IHubClient>
         {
             Console.WriteLine($"User {userId} connected");
             await ConnectWithUserIdAsync(userId);
-
-            // Role-based logic (e.g., track online staff)
-            var roleClaim = Context.User?.FindFirst(ClaimTypes.Role);
-            if (roleClaim?.Value == "Staff")
-            {
-                _memoryTracker.UserConnected(userId.ToString());
-                await Clients.Group(ROLE_BASED_GROUP.ADMIN)
-                    .ReceiveOnlineUserNumber(_memoryTracker.OnlineUserNumber);
-            }
         }
         else
         {
-            Context.Abort(); // Terminate unauthenticated connections
+            var RequestUrl = Context.GetHttpContext()?.Request.GetDisplayUrl() ?? "Unknown";
+            Console.WriteLine($"Service with url {RequestUrl} has connected to signalR successfully!");
         }
     }
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -62,8 +55,6 @@ public class HubServer : Hub<IHubClient>
                 if (roleType != null && roleType.Value == "Staff")
                 {
                     _memoryTracker.UserDisconnected(userDisconnectedId.ToString());
-                    Console.WriteLine($"Trigger event in client: number:" + _memoryTracker.OnlineUserNumber);
-                    await Clients.Group(ROLE_BASED_GROUP.ADMIN).ReceiveOnlineUserNumber(_memoryTracker.OnlineUserNumber);
                 }
             }
         }
@@ -73,16 +64,6 @@ public class HubServer : Hub<IHubClient>
         }
 
         await base.OnDisconnectedAsync(exception);
-    }
-
-    public Task<int> GetOnlineUserNumber()
-    {
-        return Task.FromResult(_memoryTracker.OnlineUserNumber);
-    }
-
-    public async Task LeaveGroup(int groupId)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupId.ToString());
     }
 
     public async Task TestEvent()
@@ -100,26 +81,76 @@ public class HubServer : Hub<IHubClient>
         await Clients.All.ReceiveTest(obj);
     }
 
-    //public async Task InvalidateNotification(InvalidateNotificationDTO dto)
-    //{
-    //    // Have to get list because the 1 person can join on 2 different tab on browser
-    //    // So the connectionId may different but still 1 userId
-    //    var receiverConnectionIdList = UserConnectionMap.
-    //        Where(pair => dto.RecipientIds.Contains(pair.Value))
-    //        .Select(pair => pair.Key)
-    //        .ToList();
+    public async Task PushNewTaskNotification(SignalRTaskItemWithRecipentsDTO taskItemAndRecipents)
+    {
+        var receiverConnectionIds = UserConnectionMap.Where(pair => taskItemAndRecipents.Recipients.Contains(pair.Value)).Select(pair => pair.Key).ToList();
+        var excludedConnectionIds = UserConnectionMap.Where(pair => taskItemAndRecipents.ExcludeRecipients.Contains(pair.Value)).Select(pair => pair.Key).ToList();
 
-    //    // If the receiver didn't online, simply do nothing
-    //    if (receiverConnectionIdList.Count <= 0)
-    //    {
-    //        return;
-    //    }
-    //    var tasks = receiverConnectionIdList
-    //        .Select(receiverConnectionId => Clients.Client(receiverConnectionId).ReceiveNotification())
-    //        .ToArray();
+        var tasks = receiverConnectionIds
+            .Select(receiverConnectionId => Clients.Client(receiverConnectionId).ReceiveNewTaskAssignment(taskItemAndRecipents.TaskItem))
+            .ToArray();
 
-    //    await Task.WhenAll(tasks);
-    //}
+        Console.WriteLine($"Send task to all Admin except admin who invoke action");
+        await Clients.GroupExcept(ROLE_BASED_GROUP.ADMIN, excludedConnectionIds).ReceiveNewTaskAssignment(taskItemAndRecipents.TaskItem);
+
+        foreach (var receiverConnectionId in receiverConnectionIds)
+        {
+            Console.WriteLine($"Send task to {receiverConnectionId}");
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    public async Task PushTaskUpdateNotification(SignalRTaskItemWithRecipentsDTO taskItemAndRecipents)
+    {
+        var receiverConnectionIds = UserConnectionMap.Where(pair => taskItemAndRecipents.Recipients.Contains(pair.Value)).Select(pair => pair.Key).ToList();
+        var excludedConnectionIds = UserConnectionMap.Where(pair => taskItemAndRecipents.ExcludeRecipients.Contains(pair.Value)).Select(pair => pair.Key).ToList();
+
+        var tasks = receiverConnectionIds
+            .Select(receiverConnectionId => Clients.Client(receiverConnectionId).ReceiveTaskUpdate(taskItemAndRecipents.TaskItem))
+            .ToArray();
+
+        Console.WriteLine($"Send task to all Admin except admin who invoke action");
+        await Clients.GroupExcept(ROLE_BASED_GROUP.ADMIN, excludedConnectionIds).ReceiveTaskUpdate(taskItemAndRecipents.TaskItem);
+
+        foreach (var receiverConnectionId in receiverConnectionIds)
+        {
+            Console.WriteLine($"Send task to {receiverConnectionId}");
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    public async Task TriggerLogout(Guid userId) {
+        var receiverConnectionId = UserConnectionMap.SingleOrDefault(pair => pair.Value == userId).Key;
+
+        if (receiverConnectionId == null)
+        {
+            return;
+        }
+        await Clients.Client(receiverConnectionId).ReceiveForceLogout("Your account was banned!");
+        Console.WriteLine($"Send task to {receiverConnectionId}");
+    }
+
+    public async Task TriggerReload(RecipentsDTO recipents)
+    {
+        var receiverConnectionIds = UserConnectionMap.Where(pair => recipents.Recipients.Contains(pair.Value)).Select(pair => pair.Key).ToList();
+        var excludedConnectionIds = UserConnectionMap.Where(pair => recipents.ExcludeRecipients.Contains(pair.Value)).Select(pair => pair.Key).ToList();
+
+        var tasks = receiverConnectionIds
+            .Select(receiverConnectionId => Clients.Client(receiverConnectionId).ReceiveForceReload())
+            .ToArray();
+
+        Console.WriteLine($"Send task to all Admin except admin who invoke action");
+        await Clients.GroupExcept(ROLE_BASED_GROUP.ADMIN, excludedConnectionIds).ReceiveForceReload();
+
+        foreach (var receiverConnectionId in receiverConnectionIds)
+        {
+            Console.WriteLine($"Send task to {receiverConnectionId}");
+        }
+
+        await Task.WhenAll(tasks);
+    }
 
     #region Helper method
     private async Task ConnectWithUserIdAsync(Guid userId)
@@ -127,17 +158,22 @@ public class HubServer : Hub<IHubClient>
         UserConnectionMap[Context.ConnectionId] = userId;
         Console.WriteLine($"Map user complete with {Context.ConnectionId} and {userId}");
         Console.WriteLine(userId + " Connected");
-
         // Admin user
         if (Context.User != null)
         {
-            var roleType = Context.User.Claims.FirstOrDefault(c => c.Type == "role");
-            if (roleType != null && (roleType.Value == "Admin"))
+            var roleClaim = Context.User?.FindFirst(ClaimTypes.Role);
+            if (roleClaim != null && (roleClaim.Value == ROLE_BASED_GROUP.ADMIN))
             {
                 Console.WriteLine("Add admin to group Admin");
                 await Groups.AddToGroupAsync(Context.ConnectionId, ROLE_BASED_GROUP.ADMIN);
                 return;
+            }
 
+            if (roleClaim != null && (roleClaim.Value == ROLE_BASED_GROUP.STAFF))
+            {
+                Console.WriteLine("Add staff to group Staff");
+                await Groups.AddToGroupAsync(Context.ConnectionId, ROLE_BASED_GROUP.STAFF);
+                return;
             }
         }
 

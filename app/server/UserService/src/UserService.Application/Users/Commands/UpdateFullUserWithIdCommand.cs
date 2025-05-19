@@ -1,4 +1,6 @@
 ﻿using Contract.Common;
+using Contract.Constants;
+using Contract.Interfaces;
 using IdentityProto;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,11 +22,13 @@ public class UpdateFullUserWithIdCommandHandler : IRequestHandler<UpdateFullUser
 {
     private readonly IApplicationDbContext _context;
     private readonly GrpcIdentity.GrpcIdentityClient _grpcIdentityClient;
+    private readonly ISignalRService _signalRService;
 
-    public UpdateFullUserWithIdCommandHandler(IApplicationDbContext context, GrpcIdentity.GrpcIdentityClient grpcIdentityClient)
+    public UpdateFullUserWithIdCommandHandler(IApplicationDbContext context, GrpcIdentity.GrpcIdentityClient grpcIdentityClient, ISignalRService signalRService)
     {
         _context = context;
         _grpcIdentityClient = grpcIdentityClient;
+        _signalRService = signalRService;
     }
 
     public async Task<Result<bool?>> Handle(UpdateFullUserWithIdCommand request, CancellationToken cancellationToken)
@@ -78,6 +82,12 @@ public class UpdateFullUserWithIdCommandHandler : IRequestHandler<UpdateFullUser
             user.UpdatedAt = DateTime.UtcNow;
             _context.Users.Update(user);
             await _context.Instance.SaveChangesAsync(cancellationToken);
+
+            if(user.IsActive == false)
+            {
+                await _signalRService.InvokeAction(SignalRAction.TriggerLogout.ToString(), user.Id);
+            }
+
             return Result<bool?>.Success(true);
 
         }

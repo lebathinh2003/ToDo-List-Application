@@ -9,6 +9,7 @@ public static class RabbitMQConstant
             // ======================= Identity ============================
             // ======================= User ============================
             public const string DELETE_USER = "delete-user-queue";
+            public const string RESTORE_USER = "restore-user-queue";
             // ======================= Task ============================
             // ======================= Other ============================
         }
@@ -20,6 +21,7 @@ public static class RabbitMQConstant
             // ======================= Identity ============================
             // ======================= USER ============================
             public const string DELETE_USER = "delete-user-event";
+            public const string RESTORE_USER = "restore-user-event";
             // ======================= Task ============================
             // ======================= Other ============================
         }
