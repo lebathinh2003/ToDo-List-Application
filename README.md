@@ -14,8 +14,8 @@ The backend of Task Manager Pro is built with scalability, maintainability, and 
 * **CQRS (Command Query Responsibility Segregation)**: Separates data read (Queries) and write (Commands) logic to optimize performance and scalability for each type of operation.
 
 ### Main Microservices:
-1.  **IdentityService**: Manages user authentication (login, registration, tokens).
-2.  **UserService**: Manages user (staff) information, roles, and user-related operations.
+1.  **IdentityService**: Manages user authentication, role (login, registration, tokens).
+2.  **UserService**: Manages user (staff) information and user-related operations.
 3.  **TaskService**: Manages tasks, including creation, updates, deletion, assignment, and status tracking.
 4.  **ApiGateway**: A single entry point for all client requests, routing them to the appropriate microservices.
 5.  **SignalRService**: Responsible for real-time communication between the server and clients (e.g., new task notifications).
