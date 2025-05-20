@@ -22,7 +22,7 @@ The backend of Task Manager Pro is built with scalability, maintainability, and 
 
 ### Inter-Service Communication:
 * **gRPC**: Used for synchronous, high-performance communication requiring quick responses between internal services.
-* **MassTransit integrated with RabbitMQ**: Utilized for asynchronous communication that doesn't require immediate feedback (e.g., event processing, background notifications), ensuring reliability and resilience.
+* **MassTransit integrated with RabbitMQ**: Utilized for asynchronous communication that doesn't require immediate feedback.
 
 ### Backend Technologies:
 * **.NET 8**: The primary development platform.
