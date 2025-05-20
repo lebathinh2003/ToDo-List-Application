@@ -4,6 +4,7 @@ namespace TaskService.Application.DTOs;
 public class TaskDTO
 {
     public Guid Id { get; set; }
+    public string Code { get; set; } = null!;
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
     public Guid AssigneeId { get; set; }

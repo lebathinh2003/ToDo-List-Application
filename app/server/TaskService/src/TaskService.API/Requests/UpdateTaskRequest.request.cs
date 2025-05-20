@@ -7,6 +7,10 @@ public class UpdateTaskRequest
 
     [Required]
     [MaxLength(50)]
+    public string Code { get; set; } = null!;
+
+    [Required]
+    [MaxLength(50)]
     public string Title { get; set; } = null!;
 
     [Required]

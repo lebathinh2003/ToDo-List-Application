@@ -70,6 +70,7 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
                     AssigneeId = task.AssigneeId,
                     AssigneeName = response.FullName,
                     AssigneeUsername = response.Usrname,
+                    Code = task.Code,
                     Title = task.Title,
                     Description = task.Description,
                     Status = task.Status.ToString(),

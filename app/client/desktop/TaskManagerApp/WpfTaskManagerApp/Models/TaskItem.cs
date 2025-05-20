@@ -17,6 +17,14 @@ public class TaskItem : INotifyPropertyChanged
         set => SetProperty(ref _id, value);
     }
 
+    private string _code = string.Empty;
+    // Task title.
+    public string Code
+    {
+        get => _code;
+        set => SetProperty(ref _code, value);
+    }
+
     private string _title = string.Empty;
     // Task title.
     public string Title
@@ -93,9 +101,10 @@ public class TaskItem : INotifyPropertyChanged
     public TaskItem() { }
 
     // Constructor with initial values.
-    public TaskItem(Guid id, string title, string description, TaskStatus status = TaskStatus.ToDo, bool isActive = true)
+    public TaskItem(Guid id, string code, string title, string description, TaskStatus status = TaskStatus.ToDo, bool isActive = true)
     {
         Id = id;
+        Code = code;
         Title = title;
         Description = description;
         Status = status;

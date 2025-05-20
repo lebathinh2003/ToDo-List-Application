@@ -239,7 +239,7 @@ public class MainViewModel : ViewModelBase, IDisposable
                 Title = addEditTaskViewModel.WindowTitle,
                 Content = dialogView,
                 Width = 520,
-                Height = 750,
+                Height = 800,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = Application.Current.MainWindow,
                 ResizeMode = ResizeMode.NoResize,

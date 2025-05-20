@@ -84,6 +84,7 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
 
                 taskQuery = taskQuery.Where(t => t.Title.ToLower().Contains(keyword) ||
                                                  t.Description.ToLower().Contains(keyword) ||
+                                                 t.Code.ToLower().Contains(keyword) ||
                                                  searchAccoountIds.Contains(t.AssigneeId.ToString()) ||
                                                  searchUserIds.Contains(t.AssigneeId.ToString())
                 );
@@ -92,6 +93,7 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
             var taskList = await taskQuery.Select(t => new TaskDTO
             {
                 Id = t.Id,
+                Code = t.Code,
                 Title = t.Title,
                 Description = t.Description,
                 AssigneeId = t.AssigneeId,

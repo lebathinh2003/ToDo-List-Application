@@ -118,6 +118,7 @@
                   HeadersVisibility="Column">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="2*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="2*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Description" Binding="{Binding Description, TargetNullValue='-'}" Width="3*" IsReadOnly="True" >
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">

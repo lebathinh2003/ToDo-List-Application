@@ -8,6 +8,9 @@ public class Task
     public Guid Id { get; set; }
     [Required]
     [MaxLength(50)]
+    public string Code { get; set; } = null!;
+    [Required]
+    [MaxLength(50)]
     public string Title { get; set; } = null!;
     [Required]
     [MaxLength(500)]

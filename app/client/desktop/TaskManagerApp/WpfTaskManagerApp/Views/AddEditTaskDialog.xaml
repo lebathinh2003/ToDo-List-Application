@@ -28,6 +28,12 @@
                          Style="{StaticResource DialogInputTextBoxStyle}"
                          Margin="0,0,0,15"
                          IsEnabled="{Binding CanEditTitle}"/>
+                
+                <TextBlock Text="Code:" Style="{StaticResource DialogLabelStyle}"/>
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
+                         Style="{StaticResource DialogInputTextBoxStyle}"
+                         Margin="0,0,0,15"
+                         IsEnabled="{Binding CanEditCode}"/>
 
                 <TextBlock Text="Description:" Style="{StaticResource DialogLabelStyle}"/>
                 <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 

@@ -31,6 +31,11 @@ namespace TaskService.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("AssigneeId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

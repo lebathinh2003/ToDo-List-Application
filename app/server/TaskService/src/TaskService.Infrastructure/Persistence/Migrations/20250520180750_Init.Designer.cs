@@ -12,7 +12,7 @@ using TaskService.Infrastructure.Persistence;
 namespace TaskService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250518071604_Init")]
+    [Migration("20250520180750_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -33,6 +33,11 @@ namespace TaskService.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("AssigneeId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");

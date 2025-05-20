@@ -28,6 +28,7 @@ public class MockupData
             var task = new Domain.Models.Task
             {
                 Id = Guid.NewGuid(),
+                Code = seedTask.Code,
                 Title = seedTask.Title,
                 Description = seedTask.Description,
                 AssigneeId = seedTask.AssigneeId,

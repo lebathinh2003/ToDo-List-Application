@@ -14,6 +14,7 @@ public record UpdateTaskCommand : IRequest<Result<TaskDTO?>>
 {
     public Guid AdminId { get; set; }
     public Guid Id { get; set; }
+    public string Code { get; set; } = null!;
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
     public Guid AssigneeId { get; set; }
@@ -40,7 +41,8 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
 
             if(request.Id == Guid.Empty ||
                 request.AdminId == Guid.Empty ||
-                request.AssigneeId == Guid.Empty || 
+                request.AssigneeId == Guid.Empty ||
+                string.IsNullOrEmpty(request.Code) ||
                 string.IsNullOrEmpty(request.Title) ||
                 string.IsNullOrEmpty(request.Description) ||
                 string.IsNullOrEmpty(request.Status) ||
@@ -59,6 +61,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
             var oldAssigneeId = task.AssigneeId;
 
             task.AssigneeId = request.AssigneeId;
+            task.Code = request.Code;
             task.Title = request.Title;
             task.Description = request.Description;
             task.IsActive = request.IsActive;
@@ -80,6 +83,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
             {
                 AssigneeId = task.AssigneeId,
                 Id = task.Id,
+                Code = task.Code,
                 Title = task.Title,
                 Description = task.Description,
                 IsActive = task.IsActive,
@@ -102,6 +106,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, Resul
                     AssigneeId = task.AssigneeId,
                     AssigneeName = response.FullName,
                     AssigneeUsername = response.Usrname,
+                    Code = task.Code,
                     Title = task.Title,
                     Description = task.Description,
                     Status = task.Status.ToString(),

@@ -236,13 +236,13 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         _serviceProvider = null;
         _signalRService = null;
         _toastViewModel = new ToastNotificationViewModel();
-        SortableTaskProperties = new ObservableCollection<string> { "Title", "DueDate", "AssigneeName", "Status", "CreatedAt" };
+        SortableTaskProperties = new ObservableCollection<string> { "Code", "Title", "DueDate", "AssigneeName", "Status", "CreatedAt" };
         SortOrders = new ObservableCollection<string> { "asc", "desc" };
         SortBy = "CreatedAt";
         Tasks = new ObservableCollection<TaskItem> {
-            new TaskItem(Guid.NewGuid(), "Design UI for Login", "Complete the UI design for the login page", TaskStatus.InProgress) { AssigneeName = "Designer A", DueDate = DateTime.Now.AddDays(2) },
-            new TaskItem(Guid.NewGuid(), "Develop API for Tasks", "Implement CRUD operations for tasks", TaskStatus.ToDo) { AssigneeName = "Developer B", DueDate = DateTime.Now.AddDays(5), IsActive = true },
-            new TaskItem(Guid.NewGuid(), "Test Payment Gateway", "Perform thorough testing of the payment gateway", TaskStatus.Done) { AssigneeName = "QA C", DueDate = DateTime.Now.AddDays(-1), IsActive = false }
+            new TaskItem(Guid.NewGuid(), "DUFL01", "Design UI for Login", "Complete the UI design for the login page", TaskStatus.InProgress) { AssigneeName = "Designer A", DueDate = DateTime.Now.AddDays(2) },
+            new TaskItem(Guid.NewGuid(), "DAFT01", "Develop API for Tasks", "Implement CRUD operations for tasks", TaskStatus.ToDo) { AssigneeName = "Developer B", DueDate = DateTime.Now.AddDays(5), IsActive = true },
+            new TaskItem(Guid.NewGuid(), "TPG01", "Test Payment Gateway", "Perform thorough testing of the payment gateway", TaskStatus.Done) { AssigneeName = "QA C", DueDate = DateTime.Now.AddDays(-1), IsActive = false }
         };
         TotalItems = Tasks.Count;
         CurrentPage = 1; Limit = 10;
@@ -270,7 +270,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _signalRService = signalRService ?? throw new ArgumentNullException(nameof(signalRService));
         _toastViewModel = toastViewModel ?? throw new ArgumentNullException(nameof(toastViewModel));
-        SortableTaskProperties = new ObservableCollection<string> { "Title", "DueDate", "AssigneeName", "Status", "CreatedAt" };
+        SortableTaskProperties = new ObservableCollection<string> { "Code", "Title", "DueDate", "AssigneeName", "Status", "CreatedAt" };
         SortOrders = new ObservableCollection<string> { "asc", "desc" };
         _sortBy = "CreatedAt"; _sortOrder = "desc";
         AddTaskCommand = new RelayCommand(async _ => await OpenAddEditTaskDialog(null), _ => CanAdminManageTasks && !IsLoading);
@@ -384,7 +384,7 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
             Title = addEditTaskViewModel.WindowTitle,
             Content = dialogView,
             Width = 520,
-            Height = 750,
+            Height = 800,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = Application.Current.MainWindow,
             ResizeMode = ResizeMode.NoResize,
@@ -468,10 +468,15 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         if (taskInList != null)
         {
             Application.Current.Dispatcher.Invoke(() => {
-                taskInList.Title = updatedTask.Title; taskInList.Description = updatedTask.Description;
-                taskInList.Status = updatedTask.Status; taskInList.AssigneeId = updatedTask.AssigneeId;
-                taskInList.AssigneeName = updatedTask.AssigneeName; taskInList.AssigneeUsername = updatedTask.AssigneeUsername;
-                taskInList.DueDate = updatedTask.DueDate; taskInList.IsActive = updatedTask.IsActive;
+                taskInList.Code = updatedTask.Code;
+                taskInList.Title = updatedTask.Title;
+                taskInList.Description = updatedTask.Description;
+                taskInList.Status = updatedTask.Status; 
+                taskInList.AssigneeId = updatedTask.AssigneeId;
+                taskInList.AssigneeName = updatedTask.AssigneeName; 
+                taskInList.AssigneeUsername = updatedTask.AssigneeUsername;
+                taskInList.DueDate = updatedTask.DueDate; 
+                taskInList.IsActive = updatedTask.IsActive;
             });
             _toastViewModel?.Show($"Task '{updatedTask.Title}' updated to {updatedTask.Status}.", ToastType.Information);
         }
@@ -491,10 +496,15 @@ public class TaskManagementViewModel : ViewModelBase, IDisposable
         var taskInList = Tasks.FirstOrDefault(t => t.Id == updatedTask.Id);
         if (taskInList != null)
         {
-            taskInList.Title = updatedTask.Title; taskInList.Description = updatedTask.Description;
-            taskInList.Status = updatedTask.Status; taskInList.AssigneeId = updatedTask.AssigneeId;
-            taskInList.AssigneeName = updatedTask.AssigneeName; taskInList.AssigneeUsername = updatedTask.AssigneeUsername;
-            taskInList.DueDate = updatedTask.DueDate; taskInList.IsActive = updatedTask.IsActive;
+            taskInList.Code = updatedTask.Code;
+            taskInList.Title = updatedTask.Title;
+            taskInList.Description = updatedTask.Description;
+            taskInList.Status = updatedTask.Status;
+            taskInList.AssigneeId = updatedTask.AssigneeId;
+            taskInList.AssigneeName = updatedTask.AssigneeName;
+            taskInList.AssigneeUsername = updatedTask.AssigneeUsername;
+            taskInList.DueDate = updatedTask.DueDate;
+            taskInList.IsActive = updatedTask.IsActive;
         }
     }
 

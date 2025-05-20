@@ -18,7 +18,7 @@ public class AddEditTaskViewModel : ViewModelBase
     private readonly IAuthenticationService? _authenticationService;
     private readonly ToastNotificationViewModel? _toastViewModel;
     // Stores original task data for edit comparison.
-    private TaskItem _editingTaskOriginal = new TaskItem(Guid.NewGuid(), "", "");
+    private TaskItem _editingTaskOriginal = new TaskItem(Guid.NewGuid(), "" ,"", "");
     // Indicates if in edit mode.
     private bool _isEditMode;
     // Indicates if save operation is in progress.
@@ -34,6 +34,17 @@ public class AddEditTaskViewModel : ViewModelBase
 
     // Window title, changes based on edit/add mode.
     public string WindowTitle => _isEditMode ? "Edit Task" : "Add New Task";
+
+    // Task code
+    private string _code = string.Empty;
+    public string Code
+    {
+        get => _code;
+        set
+        {
+            if (SetProperty(ref _code, value)) ValidateProperty(nameof(_code));
+        }
+    }
 
     // Task title.
     private string _title = string.Empty;
@@ -142,6 +153,7 @@ public class AddEditTaskViewModel : ViewModelBase
         private set => SetProperty(ref _isStatusOnlyEditMode, value);
     }
 
+    public bool CanEditCode => !_isStatusOnlyEditMode;
     public bool CanEditTitle => !_isStatusOnlyEditMode;
     public bool CanEditDescription => !_isStatusOnlyEditMode;
     public bool CanEditAssignee => !_isStatusOnlyEditMode;
@@ -169,6 +181,7 @@ public class AddEditTaskViewModel : ViewModelBase
 
         if (IsInDesignModeStatic()) // Setup for XAML designer.
         {
+            Code = "T001";
             Title = "Design Task";
             _allAssignableUsers.Add(new User(Guid.NewGuid(), "designer1", "d1@e.c", UserRole.Staff, "Designer Alice"));
             FilterAssignableUsers();
@@ -239,7 +252,7 @@ public class AddEditTaskViewModel : ViewModelBase
     {
         _isEditMode = false;
         IsStatusOnlyEditMode = false;
-        _editingTaskOriginal = new TaskItem(Guid.NewGuid(), "", "", TaskStatus.ToDo, true)
+        _editingTaskOriginal = new TaskItem(Guid.NewGuid(), "", "", "", TaskStatus.ToDo, true)
         {
             CreatedDate = DateTime.UtcNow
         };
@@ -257,7 +270,7 @@ public class AddEditTaskViewModel : ViewModelBase
     public void InitializeForEdit(TaskItem taskToEdit)
     {
         _isEditMode = true;
-        _editingTaskOriginal = new TaskItem(taskToEdit.Id, taskToEdit.Title, taskToEdit.Description, taskToEdit.Status, taskToEdit.IsActive)
+        _editingTaskOriginal = new TaskItem(taskToEdit.Id, taskToEdit.Code, taskToEdit.Title, taskToEdit.Description, taskToEdit.Status, taskToEdit.IsActive)
         { AssigneeId = taskToEdit.AssigneeId, AssigneeName = taskToEdit.AssigneeName, AssigneeUsername = taskToEdit.AssigneeUsername, CreatedDate = taskToEdit.CreatedDate, DueDate = taskToEdit.DueDate };
         PopulateFieldsFromTask(_editingTaskOriginal);
 
@@ -280,6 +293,7 @@ public class AddEditTaskViewModel : ViewModelBase
     // Updates properties related to read-only state of fields.
     private void UpdateReadOnlyStates()
     {
+        OnPropertyChanged(nameof(CanEditCode));
         OnPropertyChanged(nameof(CanEditTitle));
         OnPropertyChanged(nameof(CanEditDescription));
         OnPropertyChanged(nameof(CanEditAssignee));
@@ -291,6 +305,7 @@ public class AddEditTaskViewModel : ViewModelBase
     // Populates form fields from a TaskItem object.
     private void PopulateFieldsFromTask(TaskItem task)
     {
+        Code = task.Code;
         Title = task.Title;
         Description = task.Description;
         SelectedStatus = task.Status;
@@ -305,6 +320,9 @@ public class AddEditTaskViewModel : ViewModelBase
         ClearErrors(propertyName);
         switch (propertyName)
         {
+            case nameof(Code):
+                if (string.IsNullOrWhiteSpace(Code)) AddError(nameof(Code), "Code is required.");
+                break;
             case nameof(Title):
                 if (string.IsNullOrWhiteSpace(Title)) AddError(nameof(Title), "Title is required.");
                 break;
@@ -324,6 +342,7 @@ public class AddEditTaskViewModel : ViewModelBase
     {
         if (!IsStatusOnlyEditMode)
         {
+            ValidateProperty(nameof(Code));
             ValidateProperty(nameof(Title));
             ValidateProperty(nameof(Description));
             ValidateProperty(nameof(SelectedAssignee));
@@ -344,7 +363,8 @@ public class AddEditTaskViewModel : ViewModelBase
     private bool HasChangesForFullEdit()
     {
         if (!_isEditMode) return true;
-        return Title != _editingTaskOriginal.Title ||
+        return Code != _editingTaskOriginal.Title ||
+            Title != _editingTaskOriginal.Title ||
             Description != _editingTaskOriginal.Description ||
             SelectedStatus != _editingTaskOriginal.Status ||
             SelectedAssignee?.Id != _editingTaskOriginal.AssigneeId ||
@@ -397,6 +417,7 @@ public class AddEditTaskViewModel : ViewModelBase
                 TaskItem taskToSave = new TaskItem
                 {
                     Id = _isEditMode ? _editingTaskOriginal.Id : Guid.NewGuid(),
+                    Code = this.Code,
                     Title = this.Title,
                     Description = this.Description,
                     Status = this.SelectedStatus,
@@ -445,6 +466,7 @@ public class AddEditTaskViewModel : ViewModelBase
     // Clears all validation errors for the form.
     private void ClearAllErrors()
     {
+        ClearErrors(nameof(Code));
         ClearErrors(nameof(Title));
         ClearErrors(nameof(SelectedAssignee));
         ClearErrors(nameof(SelectedStatus));

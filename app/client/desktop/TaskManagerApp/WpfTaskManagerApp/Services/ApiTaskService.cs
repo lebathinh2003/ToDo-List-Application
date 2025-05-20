@@ -134,7 +134,7 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var taskToAdd = new { task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
+            var taskToAdd = new { task.Code, task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}", taskToAdd, _jsonSerializerOptions);
             if (response.IsSuccessStatusCode)
             {
@@ -153,7 +153,7 @@ public class ApiTaskService : ITaskService
         await SetAuthHeader();
         try
         {
-            var taskToUpdate = new { task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
+            var taskToUpdate = new { task.Code, task.Title, task.Description, task.AssigneeId, Status = task.Status.ToString(), task.IsActive, task.DueDate };
             HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.TaskEndPoint}/id/{task.Id}", taskToUpdate, _jsonSerializerOptions);
             return response.IsSuccessStatusCode;
         }

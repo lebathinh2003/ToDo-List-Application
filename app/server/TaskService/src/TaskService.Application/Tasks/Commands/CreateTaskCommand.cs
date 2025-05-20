@@ -13,6 +13,7 @@ namespace TaskService.Application.Tasks.Commands;
 public record CreateTaskCommand : IRequest<Result<TaskDTO?>>
 {
     public Guid AdminId { get; set; }
+    public string Code { get; set; } = null!;
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
     public Guid AssigneeId { get; set; }
@@ -40,6 +41,7 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
 
             if(request.AssigneeId == Guid.Empty ||
                 request.AdminId == Guid.Empty ||
+                string.IsNullOrEmpty(request.Code) ||
                 string.IsNullOrEmpty(request.Title) ||
                 string.IsNullOrEmpty(request.Description) ||
                 string.IsNullOrEmpty(request.Status) ||
@@ -52,6 +54,7 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
             {
                 AssigneeId = request.AssigneeId,
                 Id = Guid.NewGuid(),
+                Code = request.Code,
                 Title = request.Title,
                 Description = request.Description,
                 IsActive = request.IsActive,
@@ -75,6 +78,7 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
             {
                 AssigneeId = task.AssigneeId,
                 Id = task.Id,
+                Code = task.Code,
                 Title = task.Title,
                 Description = task.Description,
                 IsActive = task.IsActive,
@@ -96,6 +100,7 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, Resul
                     AssigneeId = task.AssigneeId,
                     AssigneeName = response.FullName,
                     AssigneeUsername = response.Usrname,
+                    Code = task.Code,
                     Title = task.Title,
                     Description = task.Description,
                     Status = task.Status.ToString(),
