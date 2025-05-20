@@ -1,21 +1,20 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using WpfTaskManagerApp.Models;
-using WpfTaskManagerApp.ViewModels; // Cần thêm tham chiếu System.Windows.Forms.dll
-// using Application = System.Windows.Application; // Nếu có xung đột tên
+using WpfTaskManagerApp.ViewModels;
 
 namespace WpfTaskManagerApp;
 
 public partial class MainWindow : Window
 {
     private NotifyIcon? _notifyIcon;
-    private bool _isExplicitClose = false; // Cờ để biết có phải là đóng thực sự không
+    private bool _isExplicitClose = false; // Flag for real close
     private TaskItem? _taskForTrayNotification;
 
     public MainWindow()
     {
         InitializeComponent();
-        InitializeNotifyIcon();
+        InitializeNotifyIcon(); // Initialize tray icon
     }
 
     private void InitializeNotifyIcon()
@@ -23,24 +22,24 @@ public partial class MainWindow : Window
         _notifyIcon = new NotifyIcon
         {
             Icon = new System.Drawing.Icon("Resources/to_do.ico"),
-            Visible = false, // Chỉ hiển thị khi cửa sổ bị ẩn
+            Visible = false, // Show only when window hidden
             Text = "Task Manager Pro"
         };
 
-        _notifyIcon.DoubleClick += NotifyIcon_DoubleClick;
-        _notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
+        _notifyIcon.DoubleClick += NotifyIcon_DoubleClick; // Double click to open window
+        _notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked; // Click balloon tip
 
         var contextMenu = new ContextMenuStrip();
         var showMenuItem = new ToolStripMenuItem("Show Task Manager Pro");
-        showMenuItem.Click += ShowMenuItem_Click;
+        showMenuItem.Click += ShowMenuItem_Click; // Show window from menu
         contextMenu.Items.Add(showMenuItem);
 
         var exitMenuItem = new ToolStripMenuItem("Exit");
-        exitMenuItem.Click += ExitMenuItem_Click;
+        exitMenuItem.Click += ExitMenuItem_Click; // Exit app from menu
         contextMenu.Items.Add(exitMenuItem);
 
         _notifyIcon.ContextMenuStrip = contextMenu;
-        _notifyIcon.Visible = true;
+        _notifyIcon.Visible = true; // Display tray icon
     }
 
     public void ShowWindowAndActivate()
@@ -48,12 +47,12 @@ public partial class MainWindow : Window
         this.Show();
         this.WindowState = WindowState.Normal;
         this.Activate();
-        if (this.Topmost == false) // Đảm bảo cửa sổ lên trên cùng nếu nó không phải là Topmost
+
+        if (this.Topmost == false) // Ensure window is on top
         {
             this.Topmost = true;
             this.Topmost = false;
         }
-        //if (_notifyIcon != null) _notifyIcon.Visible = true;
     }
 
     private void ShowWindow()
@@ -61,55 +60,51 @@ public partial class MainWindow : Window
         this.Show();
         this.WindowState = WindowState.Normal;
         this.Activate();
-        //if (_notifyIcon != null) _notifyIcon.Visible = false;
     }
 
     private void NotifyIcon_DoubleClick(object? sender, EventArgs e)
     {
-        ShowWindow();
+        ShowWindow(); // Open window on tray icon double click
     }
 
     private void ShowMenuItem_Click(object? sender, EventArgs e)
     {
-        ShowWindow();
+        ShowWindow(); // Open window from context menu
     }
 
     public void ShowTrayNotification(string title, string message, TaskItem? task = null)
     {
-        _taskForTrayNotification = task; // Lưu task lại để xử lý khi click
-        _notifyIcon?.ShowBalloonTip(5000, title, message, ToolTipIcon.Info);
+        _taskForTrayNotification = task; // Store task for notification click
+        _notifyIcon?.ShowBalloonTip(5000, title, message, ToolTipIcon.Info); // Show balloon tip
     }
 
     private void NotifyIcon_BalloonTipClicked(object? sender, EventArgs e)
     {
-        ShowWindowAndActivate();
+        ShowWindowAndActivate(); // Show window when notification clicked
+
         if (_taskForTrayNotification != null && DataContext is MainViewModel mainVm)
         {
-            mainVm.HandleTrayNotificationActivation(_taskForTrayNotification);
-            _taskForTrayNotification = null; // Reset sau khi xử lý
+            mainVm.HandleTrayNotificationActivation(_taskForTrayNotification); // Handle notification action
+            _taskForTrayNotification = null; // Reset stored task
         }
     }
 
     private void ExitMenuItem_Click(object? sender, EventArgs e)
     {
-        _isExplicitClose = true; // Đánh dấu là người dùng muốn đóng thực sự
-        System.Windows.Application.Current.Shutdown(); // Sử dụng System.Windows.Application để tránh nhầm lẫn
+        _isExplicitClose = true; // Mark as real close
+        System.Windows.Application.Current.Shutdown(); // Shutdown app
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (!_isExplicitClose) // Nếu không phải là đóng thực sự từ menu "Exit"
+        if (!_isExplicitClose) // If not real close
         {
-            e.Cancel = true; // Hủy việc đóng cửa sổ
-            this.Hide();     // Ẩn cửa sổ đi
-            //if (_notifyIcon != null)
-            //{
-            //    _notifyIcon.Visible = true; // Hiển thị icon ở khay hệ thống
-            //}
+            e.Cancel = true; // Cancel closing
+            this.Hide(); // Hide window instead
         }
-        else // Nếu là đóng thực sự
+        else // Real close
         {
-            _notifyIcon?.Dispose(); // Dọn dẹp NotifyIcon
+            _notifyIcon?.Dispose(); // Dispose tray icon
         }
         base.OnClosing(e);
     }
@@ -118,9 +113,7 @@ public partial class MainWindow : Window
     {
         if (WindowState == WindowState.Minimized)
         {
-            // Tùy chọn: bạn có thể ẩn cửa sổ và hiện NotifyIcon khi minimize
-            // this.Hide();
-            // if (_notifyIcon != null) _notifyIcon.Visible = true;
+            // Optionally hide window when minimized
         }
         base.OnStateChanged(e);
     }
