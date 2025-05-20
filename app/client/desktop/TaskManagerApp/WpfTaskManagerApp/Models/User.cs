@@ -1,13 +1,16 @@
-﻿using System.ComponentModel;
+﻿using System; // Added for Guid
+using System.Collections.Generic; // Added for EqualityComparer
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using WpfTaskManagerApp.Core;
 
 namespace WpfTaskManagerApp.Models;
-public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
+
+// Represents a user, implements INotifyPropertyChanged for UI updates.
+public class User : INotifyPropertyChanged
 {
     private Guid _id;
-
+    // User unique identifier.
     public Guid Id
     {
         get => _id;
@@ -15,6 +18,7 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
     }
 
     private string _username = string.Empty;
+    // User's login name.
     public string Username
     {
         get => _username;
@@ -22,15 +26,18 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
     }
 
     private string _email = string.Empty;
+    // User's email address.
     public string Email
     {
         get => _email;
         set => SetProperty(ref _email, value);
     }
 
-    public string? PasswordHash { get; set; } // Không cần PropertyChanged cho cái này ở client
+    // Hashed password (client-side usually doesn't need INPC).
+    public string? PasswordHash { get; set; }
 
     private UserRole _role;
+    // User's role (e.g., Admin, Staff).
     public UserRole Role
     {
         get => _role;
@@ -38,6 +45,7 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
     }
 
     private string _fullName = string.Empty;
+    // User's full name.
     public string FullName
     {
         get => _fullName;
@@ -45,6 +53,7 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
     }
 
     private string? _address;
+    // User's address (nullable).
     public string? Address
     {
         get => _address;
@@ -52,18 +61,17 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
     }
 
     private bool _isActive = true;
+    // Indicates if the user account is active.
     public bool IsActive
     {
         get => _isActive;
         set => SetProperty(ref _isActive, value);
     }
 
-    // Các thuộc tính không hiển thị, không cần INotifyPropertyChanged nếu không bind trực tiếp
-    // public DateTime CreatedAt { get; set; } 
-    // public DateTime UpdatedAt { get; set; }
-
+    // Default constructor.
     public User() { }
 
+    // Constructor with initial values.
     public User(Guid id, string username, string email, UserRole role, string fullName, string? address = null, bool isActive = true)
     {
         Id = id;
@@ -75,12 +83,16 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
         IsActive = isActive;
     }
 
-    // INotifyPropertyChanged implementation
+    // Event for property changes.
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    // Raises PropertyChanged event.
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    // Sets property and raises event if changed.
     protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
@@ -89,7 +101,7 @@ public class User : INotifyPropertyChanged // KẾ THỪA INotifyPropertyChanged
         return true;
     }
 
-    //User for replace DisplayMemberPath when using ItemTemplate
+    // String representation for display (e.g., in ComboBox).
     public override string ToString()
     {
         return FullName;

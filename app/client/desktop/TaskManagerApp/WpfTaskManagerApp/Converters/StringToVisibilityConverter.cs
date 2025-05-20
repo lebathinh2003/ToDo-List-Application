@@ -3,21 +3,21 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace WpfTaskManagerApp.Converters // Đảm bảo namespace là WpfTaskManagerApp.Converters
-{
-    [ValueConversion(typeof(string), typeof(Visibility))]
-    public class StringToVisibilityConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            // Hiển thị nếu string không null và không rỗng
-            return !string.IsNullOrEmpty(value as string) ? Visibility.Visible : Visibility.Collapsed;
-        }
+namespace WpfTaskManagerApp.Converters;
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            // ConvertBack thường không cần thiết cho trường hợp này
-            throw new NotImplementedException();
-        }
+// Converts string to Visibility.
+[ValueConversion(typeof(string), typeof(Visibility))]
+public class StringToVisibilityConverter : IValueConverter
+{
+    // Visible if string is not null/empty.
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return !string.IsNullOrEmpty(value as string) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // Not implemented.
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }

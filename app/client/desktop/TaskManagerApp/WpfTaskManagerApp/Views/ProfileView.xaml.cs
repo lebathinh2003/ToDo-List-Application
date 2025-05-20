@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WpfTaskManagerApp.Views
+namespace WpfTaskManagerApp.Views;
+
+/// <summary>
+/// Interaction logic for ProfileView.xaml
+/// </summary>
+public partial class ProfileView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for ProfileView.xaml
-    /// </summary>
-    public partial class ProfileView : UserControl
+    public ProfileView()
     {
-        public ProfileView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

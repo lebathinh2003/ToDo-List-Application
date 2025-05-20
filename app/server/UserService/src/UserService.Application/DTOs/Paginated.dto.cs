@@ -1,4 +1,3 @@
 ﻿using Contract.Common;
-using UserService.Application.DTOs;
-namespace UserService.Domain.Responses;
+namespace UserService.Application.DTOs;
 public class PaginatedGetFullUserDTO : BasePaginatedResponse<UserDetailDTO, NumberedPaginatedMetadata>;

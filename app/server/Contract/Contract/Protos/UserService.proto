@@ -8,6 +8,7 @@ package UserProto;
 service GrpcUser {
     rpc GetSimpleUser(GrpcIdsSetRequest) returns (GrpcGetSimpleUsersDTO);
     rpc GetUserDetailById(GrpcIdRequest) returns (GrpcUserDetailDTO);
+    rpc SearchSimpleUser(GrpcKeywordRequest) returns (GrpcIdsSetDTO);
 }
 
 message GrpcEmpty {}
@@ -16,7 +17,15 @@ message GrpcIdRequest {
     string Id = 1;
 }
 
+message GrpcKeywordRequest {
+    string Keyword = 1;
+}
+
 message GrpcIdsSetRequest {
+    repeated string Ids = 1; // HashSet<Guid> represented as repeated strings
+}
+
+message GrpcIdsSetDTO {
     repeated string Ids = 1; // HashSet<Guid> represented as repeated strings
 }
 

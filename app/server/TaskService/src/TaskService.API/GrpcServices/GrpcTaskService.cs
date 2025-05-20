@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using TaskProto;
-namespace UserService.API.GrpcServices;
+namespace TaskService.API.GrpcServices;
 
 public class GrpcTaskService : GrpcTask.GrpcTaskBase
 {

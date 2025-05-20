@@ -1,64 +1,38 @@
-﻿using Contract.Extension;
-using Duende.IdentityServer.Services;
-using IdentityService.API.Extensions;
-using IdentityService.API.Services;
-using IdentityService.Application;
-using IdentityService.Infrastructure;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
+﻿using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Hosting.Server;
+using IdentityService.API;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services
-builder.Services.AddIdentityAndIdentityServer(builder.Configuration);
-builder.Services.AddScoped<IProfileService, CustomProfileService>();
-builder.Services.AddInfrastructure(builder.Configuration);
-
-// For HttpClientFactory
-builder.Services.AddHttpClient();
-
-
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-builder.Services.AddHttpContextAccessor();
-
-// Jwt authentication
-builder.Services.AddJwtAuthentication(builder.Configuration);
-builder.Services.AddAuthorization();
-builder.WebHost.ConfigureKestrel(options =>
+try
 {
-    options.ListenLocalhost(5001, listenOptions =>
+    var app =  WebApplication.CreateBuilder(args)
+                .AddAPIServices()
+                .Build()
+                .UseAPIServices();
+
+    app.Start();
+
+    var server = app.Services.GetService<IServer>();
+    var addresses = server?.Features.Get<IServerAddressesFeature>()?.Addresses;
+
+    if (addresses != null)
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-    });
-    options.ListenLocalhost(6001, listenOptions =>
+        foreach (var address in addresses)
+        {
+            Console.WriteLine($"API is listening on: {address}");
+        }
+    }
+    else
     {
-        listenOptions.UseHttps();
-        listenOptions.Protocols = HttpProtocols.Http2;
-    });
-});
+        Console.WriteLine("Could not retrieve server addresses.");
+    }
 
-builder.Services.AddGrpcServices();
-builder.Services.AddApplication();
-
-var app = builder.Build();
-app.UseCommonServices();
-
-// Middleware configuration
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.WaitForShutdown();
 }
-
-app.UseIdentityServer();
-
-app.UseAuthentication();     // After UseRouting
-app.UseAuthorization();
-
-app.MapControllers();        // Top-level route registration
-
-app.UseGrpcServices();
-
-app.Run();
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Console.WriteLine(ex.Message, "Unhandled exception");
+}
+finally
+{
+    Console.WriteLine("Shut down complete");
+}

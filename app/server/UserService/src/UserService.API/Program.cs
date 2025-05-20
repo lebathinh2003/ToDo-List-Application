@@ -1,70 +1,38 @@
-﻿using Contract.Extension;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using UserService.API.Extensions;
-using UserService.Application;
-using UserService.Infrastructure;
+﻿using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Hosting.Server;
+using UserService.API;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddErrorValidation();
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddInfrastructure(builder.Configuration);
-
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-
-//Authentication & Authorization
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
-    {
-        options.Authority = jwtSettings["Issuer"];
-        options.RequireHttpsMetadata = false;
-        options.Audience = jwtSettings["Audience"];
-    });
-
-builder.Services.AddAuthorization();
-//builder.WebHost.UseUrls($"http://*:5002");
-builder.WebHost.ConfigureKestrel(options =>
+try
 {
-    options.ListenLocalhost(5002, listenOptions =>
+    var app = await WebApplication.CreateBuilder(args)
+                .AddAPIServices()
+                .Build()
+                .UseAPIServicesAsync();
+
+    app.Start();
+
+    var server = app.Services.GetService<IServer>();
+    var addresses = server?.Features.Get<IServerAddressesFeature>()?.Addresses;
+
+    if (addresses != null)
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-    });
-
-    options.ListenLocalhost(6002, listenOptions =>
+        foreach (var address in addresses)
+        {
+            Console.WriteLine($"API is listening on: {address}");
+        }
+    }
+    else
     {
-        listenOptions.UseHttps();
-        listenOptions.Protocols = HttpProtocols.Http2;
-    });
-});
+        Console.WriteLine("Could not retrieve server addresses.");
+    }
 
-builder.Services.AddGrpcServices();
-
-builder.Services.AddApplication();
-
-
-
-var app = builder.Build();
-
-// Middleware
-app.UseCommonServices();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.WaitForShutdown();
 }
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.UseGrpcServices();
-await app.UseSignalRServiceAsync();
-
-app.Run();
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Console.WriteLine(ex.Message, "Unhandled exception");
+}
+finally
+{
+    Console.WriteLine("Shut down complete");
+}

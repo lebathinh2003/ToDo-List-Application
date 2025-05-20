@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WpfTaskManagerApp.Views
+namespace WpfTaskManagerApp.Views;
+
+/// <summary>
+/// Interaction logic for AddEditTaskDialog.xaml
+/// </summary>
+public partial class AddEditTaskDialog : UserControl
 {
-    /// <summary>
-    /// Interaction logic for AddEditTaskDialog.xaml
-    /// </summary>
-    public partial class AddEditTaskDialog : UserControl
+    public AddEditTaskDialog()
     {
-        public AddEditTaskDialog()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

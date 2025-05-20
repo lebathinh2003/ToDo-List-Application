@@ -1,57 +1,38 @@
-﻿using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.IdentityModel.Tokens;
-using Ocelot.DependencyInjection;
-using Ocelot.Middleware;
+﻿using ApiGateway;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Hosting.Server;
 
-var builder = WebApplication.CreateBuilder(args);
+try {
+    var app = WebApplication.CreateBuilder(args)
+                 .AddApiGateway()
+                 .Build()
+                 .UseApiGateway();
 
-// Load cấu hình từ file ocelot.json
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+    app.Start();
 
-// Lấy thông tin cấu hình JWT
-var jwtSettings = builder.Configuration.GetSection("Jwt");
+    var server = app.Services.GetService<IServer>();
+    var addresses = server?.Features.Get<IServerAddressesFeature>()?.Addresses;
 
-//builder.WebHost.UseUrls($"http://*:5000");
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenLocalhost(5000, listenOptions =>
+    if (addresses != null)
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-    });
-
-    options.ListenLocalhost(6000, listenOptions =>
-    {
-        listenOptions.UseHttps();
-        listenOptions.Protocols = HttpProtocols.Http2;
-    });
-});
-
-builder.Services.AddAuthentication()
-    .AddJwtBearer("Bearer", options =>
-    {
-        options.Authority = jwtSettings["Issuer"]; // URL của Identity Server
-        options.RequireHttpsMetadata = false;
-        options.TokenValidationParameters = new TokenValidationParameters
+        foreach (var address in addresses)
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
-        };
-    });
+            Console.WriteLine($"Chat hub is listening on: {address}");
+        }
+    }
+    else
+    {
+        Console.WriteLine("Could not retrieve server addresses.");
+    }
 
-// Add Ocelot to services
-builder.Services.AddOcelot();
+    app.WaitForShutdown();
 
-var app = builder.Build();
-
-// Use necessary middleware
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseWebSockets();
-app.UseOcelot().Wait();    // Ocelot processes the request
-
-app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Console.WriteLine(ex.Message, "Unhandled exception");
+}
+finally
+{
+    Console.WriteLine("Shut down complete");
+}

@@ -1,10 +1,16 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic; // Added for EqualityComparer
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
+using TaskStatus = WpfTaskManagerApp.Core.TaskStatus; // Alias for TaskStatus
+
 namespace WpfTaskManagerApp.Models;
+
+// Represents a task item, implements INotifyPropertyChanged for UI updates.
 public class TaskItem : INotifyPropertyChanged
 {
     private Guid _id;
+    // Task unique identifier.
     public Guid Id
     {
         get => _id;
@@ -12,6 +18,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private string _title = string.Empty;
+    // Task title.
     public string Title
     {
         get => _title;
@@ -19,6 +26,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private string _description = string.Empty;
+    // Task description.
     public string Description
     {
         get => _description;
@@ -26,6 +34,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private Guid? _assigneeId;
+    // ID of the assigned user (nullable).
     public Guid? AssigneeId
     {
         get => _assigneeId;
@@ -33,6 +42,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private string? _assigneeName;
+    // Name of the assigned user (nullable).
     public string? AssigneeName
     {
         get => _assigneeName;
@@ -40,6 +50,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private string? _assigneeUsername;
+    // Username of the assigned user (nullable).
     public string? AssigneeUsername
     {
         get => _assigneeUsername;
@@ -47,6 +58,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private TaskStatus _status;
+    // Current status of the task.
     public TaskStatus Status
     {
         get => _status;
@@ -54,6 +66,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private bool _isActive = true;
+    // Indicates if the task is active.
     public bool IsActive
     {
         get => _isActive;
@@ -61,6 +74,7 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private DateTime _createdDate = DateTime.UtcNow;
+    // Date the task was created.
     public DateTime CreatedDate
     {
         get => _createdDate;
@@ -68,14 +82,17 @@ public class TaskItem : INotifyPropertyChanged
     }
 
     private DateTime? _dueDate;
+    // Due date for the task (nullable).
     public DateTime? DueDate
     {
         get => _dueDate;
         set => SetProperty(ref _dueDate, value);
     }
 
+    // Default constructor.
     public TaskItem() { }
 
+    // Constructor with initial values.
     public TaskItem(Guid id, string title, string description, TaskStatus status = TaskStatus.ToDo, bool isActive = true)
     {
         Id = id;
@@ -86,11 +103,16 @@ public class TaskItem : INotifyPropertyChanged
         CreatedDate = DateTime.UtcNow;
     }
 
+    // Event for property changes.
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    // Raises PropertyChanged event.
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    // Sets property and raises event if changed.
     protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;

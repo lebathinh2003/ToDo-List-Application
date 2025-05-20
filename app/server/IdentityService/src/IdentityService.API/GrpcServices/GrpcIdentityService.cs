@@ -1,7 +1,6 @@
 ﻿using Google.Protobuf.Collections;
 using Grpc.Core;
 using IdentityProto;
-using IdentityService.Application.AccountDTOs.Commands;
 using IdentityService.Application.ApplicationUsers.Commands;
 using IdentityService.Application.ApplicationUsers.Queries;
 using MediatR;
@@ -112,4 +111,24 @@ public class GrpcIdentityService : GrpcIdentity.GrpcIdentityBase
             Role = response.Value.Role ?? ""
         };
     }
+    public override async Task<GrpcIdsSetDTO> SearchSimpleAccount(GrpcKeywordRequest request, ServerCallContext context)
+    {
+        if(string.IsNullOrEmpty(request.Keyword))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Keyword must not be null or empty."));
+        }
+
+        var response = await _sender.Send(new SearchSimpleAccountQuery
+        {
+            Keyword = request.Keyword,
+        });
+        response.ThrowIfFailure();
+
+        return new GrpcIdsSetDTO
+        {
+            Ids = { response.Value }
+        };
+
+    }
+
 }

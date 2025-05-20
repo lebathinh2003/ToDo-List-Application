@@ -1,20 +1,23 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Windows.Data;
 using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
 
 namespace WpfTaskManagerApp.Converters;
+
+// Converts TaskStatus enum to a display string.
 public class TaskStatusToStringConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value == null) // Nếu giá trị là null (đại diện cho "All")
+        if (value == null) // Null represents "All".
         {
-            // Kiểm tra parameter để xem có muốn hiển thị chữ khác không, ví dụ "Tất cả trạng thái"
+            // Use parameter for "All" text, or default to "All".
             return parameter?.ToString() ?? "All";
         }
         if (value is TaskStatus status)
         {
-            // Tùy chỉnh cách hiển thị tên trạng thái nếu cần
+            // Custom display names for statuses.
             switch (status)
             {
                 case TaskStatus.ToDo:
@@ -26,15 +29,15 @@ public class TaskStatusToStringConverter : IValueConverter
                 case TaskStatus.Cancelled:
                     return "Cancelled";
                 default:
-                    return status.ToString(); // Trả về tên enum nếu không có case nào khớp
+                    return status.ToString(); // Enum name as fallback.
             }
         }
-        return value?.ToString() ?? string.Empty; // Fallback
+        return value?.ToString() ?? string.Empty; // General fallback.
     }
 
+    // Not needed for display-only.
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        // Không cần thiết cho ComboBox chỉ hiển thị
         throw new NotImplementedException();
     }
 }

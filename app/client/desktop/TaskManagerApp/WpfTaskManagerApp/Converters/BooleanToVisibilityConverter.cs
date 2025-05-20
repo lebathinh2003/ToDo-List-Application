@@ -1,20 +1,16 @@
-﻿using System.Globalization;
-using System.Windows.Data;
+﻿using System;
+using System.Globalization;
 using System.Windows;
+using System.Windows.Data;
 
 namespace WpfTaskManagerApp.Converters;
 
+// Converts boolean to Visibility. Allows inversion.
 [ValueConversion(typeof(bool), typeof(Visibility))]
 public class BooleanToVisibilityConverter : IValueConverter
 {
-    /// <summary>
-    /// Converts a boolean value to a Visibility value.
-    /// </summary>
-    /// <param name="value">The boolean value to convert.</param>
-    /// <param name="targetType">The type of the binding target property (Visibility).</param>
-    /// <param name="parameter">An optional parameter. If "invert" or "inverted", the logic is inverted.</param>
-    /// <param name="culture">The culture to use in the converter.</param>
-    /// <returns>Visibility.Visible if true (or false if inverted), otherwise Visibility.Collapsed.</returns>
+    // Bool to Visibility. True = Visible, False = Collapsed.
+    // Parameter "invert" or "inverted" flips logic.
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         bool boolValue = false;
@@ -35,14 +31,8 @@ public class BooleanToVisibilityConverter : IValueConverter
         return boolValue ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>
-    /// Converts a Visibility value back to a boolean value.
-    /// </summary>
-    /// <param name="value">The Visibility value to convert.</param>
-    /// <param name="targetType">The type of the binding target property (bool).</param>
-    /// <param name="parameter">An optional parameter. If "invert" or "inverted", the logic is inverted.</param>
-    /// <param name="culture">The culture to use in the converter.</param>
-    /// <returns>True if Visibility.Visible (or false if inverted), otherwise false.</returns>
+    // Visibility to bool. Visible = True, Collapsed = False.
+    // Parameter "invert" or "inverted" flips logic.
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is Visibility visibility)
@@ -58,6 +48,6 @@ public class BooleanToVisibilityConverter : IValueConverter
             }
             return visibility == Visibility.Visible;
         }
-        return false;
+        return false; // Default for non-Visibility.
     }
 }

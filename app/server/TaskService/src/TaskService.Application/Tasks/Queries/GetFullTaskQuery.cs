@@ -9,7 +9,6 @@ using System.ComponentModel.DataAnnotations;
 using TaskService.Application.DTOs;
 using TaskService.Domain.Errors;
 using TaskService.Domain.Interfaces;
-using TaskService.Domain.Responses;
 using UserProto;
 using TaskStatus = TaskService.Domain.Models.TaskStatus;
 
@@ -69,16 +68,24 @@ public class GetFullTaskQueryHandler : IRequestHandler<GetFullTaskQuery, Result<
             {
                 var keyword = paginatedDTO.Keyword.ToLower();
 
-                //var searchAccountResponse = await _grpcAccountClient.SearchAccountAsync(new GrpcSearchAccountRequest
-                //{
-                //    Keyword = keyword,
-                //}, cancellationToken: cancellationToken);
+                var searchAccountResponse = await _grpcUserClient.SearchSimpleUserAsync(new GrpcKeywordRequest
+                {
+                    Keyword = keyword,
+                }, cancellationToken: cancellationToken);
 
-                //var searchAuthorIds = searchAccountResponse.AccountIds.ToHashSet();
+                var searchAccoountIds = searchAccountResponse.Ids.ToHashSet();
+
+                var searchUserResponse = await _grpcUserClient.SearchSimpleUserAsync(new GrpcKeywordRequest
+                {
+                    Keyword = keyword,
+                }, cancellationToken: cancellationToken);
+
+                var searchUserIds = searchUserResponse.Ids.ToHashSet();
 
                 taskQuery = taskQuery.Where(t => t.Title.ToLower().Contains(keyword) ||
-                                                 t.Description.ToLower().Contains(keyword)
-                                                   //searchAuthorIds.Contains(u.AccountId.ToString())
+                                                 t.Description.ToLower().Contains(keyword) ||
+                                                 searchAccoountIds.Contains(t.AssigneeId.ToString()) ||
+                                                 searchUserIds.Contains(t.AssigneeId.ToString())
                 );
             }
 

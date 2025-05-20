@@ -6,7 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
-namespace IdentityService.Application.AccountDTOs.Commands;
+namespace IdentityService.Application.ApplicationUsers.Commands;
 
 public record CreateStaffAccountCommand : IRequest<Result<AccountDTO?>>
 {

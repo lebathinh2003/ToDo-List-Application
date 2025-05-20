@@ -1,101 +1,101 @@
-﻿using System.Diagnostics;
-using System.Windows;
-using Microsoft.AspNetCore.SignalR.Client;
+﻿using Microsoft.AspNetCore.SignalR.Client;
 using WpfTaskManagerApp.Configs;
 using WpfTaskManagerApp.DTOs;
+using WpfTaskManagerApp.Interfaces;
 using WpfTaskManagerApp.Models;
 using WpfTaskManagerApp.Utils;
-
 namespace WpfTaskManagerApp.Services;
+
+// Service for SignalR real-time communication.
 public class SignalRService : ISignalRService
 {
     private HubConnection? _hubConnection;
     private readonly ITokenProvider _tokenProvider;
     private readonly string _hubUrl;
 
+    // True if currently connected to the hub.
     public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
+    // Event for new task assignments.
     public event Action<TaskItem>? NewTaskAssigned;
+    // Event for task status updates.
     public event Action<TaskItem>? TaskStatusUpdated;
+    // Event for forced logout requests.
     public event Action<string?>? ForceLogoutReceived;
+    // Event for general reload requests.
     public event Action? ReloadReceived;
 
-
+    // Constructor.
     public SignalRService(ITokenProvider tokenProvider)
     {
         _tokenProvider = tokenProvider;
-        // ***** SỬ DỤNG URL HUB BẠN CUNG CẤP *****
-        _hubUrl = $"{ApiConfig.BaseUrl}/{ApiConfig.HubEndPoint}";
-        // ***** KẾT THÚC SỬ DỤNG URL HUB *****
+        _hubUrl = $"{ApiConfig.BaseUrl}/{ApiConfig.HubEndPoint}"; // Hub URL from config.
         InitializeHubConnection();
     }
 
+    // Initializes the SignalR hub connection and event handlers.
     private void InitializeHubConnection()
     {
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(_hubUrl, options =>
             {
+                // Provide token for authentication.
                 options.AccessTokenProvider = () => Task.FromResult(_tokenProvider.GetToken());
             })
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect() // Handles temporary disconnections.
             .Build();
 
-        // Lắng nghe sự kiện "ReceiveNewTaskAssignment" từ server
-        // Server sẽ gửi TaskItem khi một task mới được gán cho user hiện tại
-        _hubConnection.On<SignalRTaskItemDTO>("ReceiveNewTaskAssignment", (newTask) =>
+        // Listen for new task assignments.
+        _hubConnection.On<SignalRTaskItemDTO>("ReceiveNewTaskAssignment", (newTaskDto) =>
         {
-            Debug.WriteLine($"SignalR: Received new task assignment: {newTask.Title}");
-            Application.Current.Dispatcher.Invoke(() => NewTaskAssigned?.Invoke(TaskItemMapper.FromDTO(newTask)));
+            Application.Current.Dispatcher.Invoke(() => NewTaskAssigned?.Invoke(TaskItemMapper.FromDTO(newTaskDto)));
         });
 
-        // Lắng nghe sự kiện "ReceiveTaskUpdate" từ server
-        // Server sẽ gửi TaskItem đã được cập nhật
-        _hubConnection.On<SignalRTaskItemDTO>("ReceiveTaskUpdate", (updatedTask) =>
+        // Listen for task updates.
+        _hubConnection.On<SignalRTaskItemDTO>("ReceiveTaskUpdate", (updatedTaskDto) =>
         {
-            Debug.WriteLine($"SignalR: Received task update: {updatedTask.Title}, Status: {updatedTask.Status}");
-            Application.Current.Dispatcher.Invoke(() => TaskStatusUpdated?.Invoke(TaskItemMapper.FromDTO(updatedTask)));
+            Application.Current.Dispatcher.Invoke(() => TaskStatusUpdated?.Invoke(TaskItemMapper.FromDTO(updatedTaskDto)));
         });
 
+        // Listen for force logout commands.
         _hubConnection.On<string?>("ReceiveForceLogout", (reason) =>
         {
-            Debug.WriteLine($"SignalR: Received ForceLogout. Reason: {reason ?? "No reason provided."}");
             Application.Current.Dispatcher.Invoke(() => ForceLogoutReceived?.Invoke(reason));
         });
 
+        // Listen for force reload commands.
         _hubConnection.On("ReceiveForceReload", () =>
         {
-            Debug.WriteLine($"SignalR: Received ReceiveForceReload.");
             Application.Current.Dispatcher.Invoke(() => ReloadReceived?.Invoke());
         });
 
+        // Handle connection closure and attempt to reconnect.
         _hubConnection.Closed += async (error) =>
         {
-            Debug.WriteLine($"SignalR: Connection closed. Error: {error?.Message}");
-            await Task.Delay(3 * 1000);
+            await Task.Delay(TimeSpan.FromSeconds(3)); // Wait before reconnecting.
             await ConnectAsync();
         };
     }
+
+    // Connects to the SignalR hub.
     public async Task ConnectAsync()
     {
         if (_hubConnection == null || string.IsNullOrEmpty(_tokenProvider.GetToken()))
         {
-            Debug.WriteLine("SignalR: Cannot connect. HubConnection is null or no token.");
-            return;
+            return; // Cannot connect without hub or token.
         }
+
         if (!IsConnected)
         {
             try
             {
                 await _hubConnection.StartAsync();
-                Debug.WriteLine("SignalR: Connection established.");
             }
-            catch (Exception ex) { Debug.WriteLine($"SignalR connection error: {ex.Message}"); }
-        }
-        else
-        {
-            Debug.WriteLine("SignalR: Already connected.");
+            catch (Exception) { /* Log connection error. */ }
         }
     }
+
+    // Disconnects from the SignalR hub.
     public async Task DisconnectAsync()
     {
         if (_hubConnection != null && IsConnected)
@@ -103,9 +103,8 @@ public class SignalRService : ISignalRService
             try
             {
                 await _hubConnection.StopAsync();
-                Debug.WriteLine("SignalR: Connection stopped.");
             }
-            catch (Exception ex) { Debug.WriteLine($"SignalR disconnection error: {ex.Message}"); }
+            catch (Exception) { /* Log disconnection error. */ }
         }
     }
 }

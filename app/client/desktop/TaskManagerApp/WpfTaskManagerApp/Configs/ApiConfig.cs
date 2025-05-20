@@ -1,18 +1,23 @@
-﻿namespace WpfTaskManagerApp.Configs; public static class ApiConfig
+﻿namespace WpfTaskManagerApp.Configs;
+
+// API configuration.
+public static class ApiConfig
 {
-    // URL cơ sở của API backend
-    public const string BaseUrl = "http://localhost:5000"; // Hoặc URL API thực tế của bạn
+    // API base URL.
+    public const string BaseUrl = "http://localhost:5000";
 
-    // Endpoints cho Authentication
-    public const string AuthEndPoint = "auth"; // Ví dụ: /auth/login, /auth/change-password
+    // Auth endpoint.
+    public const string AuthEndPoint = "auth";
 
-    // Endpoints cho User operations
-    public const string UserEndPoint = "users"; // Ví dụ: /users, /users/{id}, /users/id/{id}
-    public const string UserProfileEndPoint = "users"; // Endpoint cho user tự cập nhật profile, ví dụ: /user
+    // User endpoint.
+    public const string UserEndPoint = "users";
 
-    // Endpoints cho Task operations
-    public const string TaskEndPoint = "tasks"; // Ví dụ: /tasks, /tasks/{id}
+    // User profile endpoint.
+    public const string UserProfileEndPoint = "users";
 
-    // Endpoints cho Websocket Hub server
+    // Task endpoint.
+    public const string TaskEndPoint = "tasks";
+
+    // Hub endpoint.
     public const string HubEndPoint = "hub-server";
 }

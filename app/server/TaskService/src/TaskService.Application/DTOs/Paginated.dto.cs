@@ -1,4 +1,3 @@
 ﻿using Contract.Common;
-using TaskService.Application.DTOs;
-namespace TaskService.Domain.Responses;
+namespace TaskService.Application.DTOs;
 public class PaginatedGetFullTaskDTO : BasePaginatedResponse<TaskDTO, NumberedPaginatedMetadata>;

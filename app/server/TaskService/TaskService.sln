@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskService.Application", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskService.API", "src\TaskService.API\TaskService.API.csproj", "{43C8AF64-4514-936B-608A-E617BC47DAD5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E649FC0D-6062-091E-1AE5-F40291750153} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{6133C4DF-8594-B8B5-F2F0-CEB907DE74C7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{BA9761EF-A62F-7808-7CDA-3C7B389C257B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{43C8AF64-4514-936B-608A-E617BC47DAD5} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B9C41940-6E04-4E55-A65D-447E3A972FF7}

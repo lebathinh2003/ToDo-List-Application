@@ -1,4 +1,7 @@
 ﻿using Contract.Common;
+using Contract.Constants;
+using Contract.DTOs.SignalRDTOs;
+using Contract.Interfaces;
 using IdentityProto;
 using MediatR;
 using UserService.Application.DTOs;
@@ -8,6 +11,7 @@ using UserService.Domain.Models;
 namespace UserService.Application.Users.Commands;
 public record CreateUserCommand : IRequest<Result<UserDetailDTO?>>
 {
+    public Guid AdminId { get; set; }
     public string Address { get; set; } = null!;
     public string Fullname { get; set; } = null!;
     public string Username { get; set; } = null!;
@@ -21,11 +25,13 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
 {
     private readonly IApplicationDbContext _context;
     private readonly GrpcIdentity.GrpcIdentityClient _grpcIdentityClient;
+    private readonly ISignalRService _signalRService;
 
-    public CreateUserCommandHandler(IApplicationDbContext context, GrpcIdentity.GrpcIdentityClient grpcIdentityClient)
+    public CreateUserCommandHandler(IApplicationDbContext context, GrpcIdentity.GrpcIdentityClient grpcIdentityClient, ISignalRService signalRService)
     {
         _context = context;
         _grpcIdentityClient = grpcIdentityClient;
+        _signalRService = signalRService;
     }
 
     public async Task<Result<UserDetailDTO?>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -59,6 +65,12 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
 
             _context.Users.Add(user);
             await _context.Instance.SaveChangesAsync(cancellationToken);
+
+            await _signalRService.InvokeAction(SignalRAction.TriggerReload.ToString(), new RecipentsDTO
+            {
+                Recipients = new List<Guid>(),
+                ExcludeRecipients = new List<Guid> { request.AdminId }
+            });
 
             return Result<UserDetailDTO?>.Success(new UserDetailDTO
             {

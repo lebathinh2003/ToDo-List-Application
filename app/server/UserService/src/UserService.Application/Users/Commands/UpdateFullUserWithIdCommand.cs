@@ -1,5 +1,6 @@
 ﻿using Contract.Common;
 using Contract.Constants;
+using Contract.DTOs.SignalRDTOs;
 using Contract.Interfaces;
 using IdentityProto;
 using MediatR;
@@ -9,6 +10,7 @@ using UserService.Domain.Interfaces;
 namespace UserService.Application.Users.Commands;
 public record UpdateFullUserWithIdCommand : IRequest<Result<bool?>>
 {
+    public Guid AdminId { get; set; }
     public Guid Id { get; set; }
     public string? Address { get; set; } 
     public string? Fullname { get; set; }
@@ -87,6 +89,12 @@ public class UpdateFullUserWithIdCommandHandler : IRequestHandler<UpdateFullUser
             {
                 await _signalRService.InvokeAction(SignalRAction.TriggerLogout.ToString(), user.Id);
             }
+
+            await _signalRService.InvokeAction(SignalRAction.TriggerReload.ToString(), new RecipentsDTO
+            {
+                Recipients = new List<Guid>(),
+                ExcludeRecipients = new List<Guid> { user.Id }
+            });
 
             return Result<bool?>.Success(true);
 

@@ -3,8 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Security;
 using System.Reflection;
+using TaskService.Application.Configs;
 using UserProto;
-using UserService.Application.Configs;
 
 namespace TaskService.Application;
 

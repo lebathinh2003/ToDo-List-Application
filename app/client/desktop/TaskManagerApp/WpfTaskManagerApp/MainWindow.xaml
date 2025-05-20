@@ -77,6 +77,8 @@
         <Style TargetType="Button" x:Key="LogoutButtonStyle">
             <Setter Property="Background" Value="#F87171"/>
             <Setter Property="Foreground" Value="White"/>
+            <Setter Property="MinWidth" Value="55"/>
+            <Setter Property="MinHeight" Value="25"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="15,10"/>
             <Setter Property="Margin" Value="5,0"/>

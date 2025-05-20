@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
 using Google.Protobuf.Collections;
-using UserService.Application.Configs.MapperConverters;
+using TaskService.Application.Configs.MapperConverters;
 
-
-namespace UserService.Application.Configs;
+namespace TaskService.Application.Configs;
 
 public class MappingConfig
 {

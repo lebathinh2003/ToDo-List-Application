@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Google.Protobuf.Collections;
 
-namespace UserService.Application.Configs.MapperConverters;
+namespace TaskService.Application.Configs.MapperConverters;
 
 internal class RepeatedFieldToListConverter<TSource, TDestination> : ITypeConverter<RepeatedField<TSource>, List<TDestination>>
 {

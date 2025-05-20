@@ -4,10 +4,15 @@ using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
 
 namespace WpfTaskManagerApp.Utils;
 
+// DTO to model mapper.
 public static class TaskItemMapper
 {
+    // SignalR DTO to TaskItem.
     public static TaskItem FromDTO(SignalRTaskItemDTO dto)
     {
+        // Parse status string to enum; defaults to ToDo if parse fails.
+        Enum.TryParse<TaskStatus>(dto.Status, true, out var parsedStatus); // `true` for ignoreCase.
+
         return new TaskItem
         {
             Id = dto.Id,
@@ -16,9 +21,7 @@ public static class TaskItemMapper
             AssigneeId = dto.AssigneeId,
             AssigneeName = dto.AssigneeName,
             AssigneeUsername = dto.AssigneeUsername,
-            Status = Enum.TryParse<TaskStatus>(dto.Status, out var status)
-                        ? status
-                        : TaskStatus.ToDo,
+            Status = parsedStatus, // If TryParse fails, parsedStatus is default(TaskStatus).
             CreatedDate = dto.CreatedDate,
             DueDate = dto.DueDate,
             IsActive = dto.IsActive

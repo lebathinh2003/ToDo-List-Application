@@ -9,6 +9,8 @@ service GrpcIdentity {
     rpc GetSimpleAccounts (GrpcIdsSetRequest) returns (GrpcListSimpleAccountsDTO);
     rpc CreateAccount (GrpcCreateAccountRequest) returns (GrpcAccountDetailDTO);
     rpc UpdateAccount (GrpcUpdateAccountRequest) returns (GrpcStatusResponse);
+    rpc SearchSimpleAccount(GrpcKeywordRequest) returns (GrpcIdsSetDTO);
+
 }
 
 message GrpcEmpty {}
@@ -17,9 +19,18 @@ message GrpcIdRequest {
     string Id = 1;
 }
 
+message GrpcKeywordRequest {
+    string Keyword = 1;
+}
+
 message GrpcIdsSetRequest {
     repeated string Ids = 1; // HashSet<Guid> represented as repeated strings
 }
+
+message GrpcIdsSetDTO {
+    repeated string Ids = 1; // HashSet<Guid> represented as repeated strings
+}
+
 
 message GrpcUpdateAccountRequest {
     string Id = 1;

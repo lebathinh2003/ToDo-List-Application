@@ -9,7 +9,6 @@ using System.ComponentModel.DataAnnotations;
 using UserService.Application.DTOs;
 using UserService.Domain.Errors;
 using UserService.Domain.Interfaces;
-using UserService.Domain.Responses;
 using IdentityProto;
 
 namespace UserService.Application.Users.Queries;
@@ -57,16 +56,16 @@ public class GetFullUserQueryHandler : IRequestHandler<GetFullUserQuery, Result<
             {
                 var keyword = paginatedDTO.Keyword.ToLower();
 
-                //var searchAccountResponse = await _grpcAccountClient.SearchAccountAsync(new GrpcSearchAccountRequest
-                //{
-                //    Keyword = keyword,
-                //}, cancellationToken: cancellationToken);
+                var searchAccountResponse = await _grpcIdentityClient.SearchSimpleAccountAsync(new GrpcKeywordRequest
+                {
+                    Keyword = keyword,
+                }, cancellationToken: cancellationToken);
 
-                //var searchAuthorIds = searchAccountResponse.AccountIds.ToHashSet();
+                var searchAccountIds = searchAccountResponse.Ids.ToHashSet();
 
                 userQuery = userQuery.Where(u => u.FullName.ToLower().Contains(keyword) ||
-                                                 u.Address.ToLower().Contains(keyword)
-                //searchAuthorIds.Contains(u.AccountId.ToString())
+                                                 u.Address.ToLower().Contains(keyword) ||
+                                                 searchAccountIds.Contains(u.Id.ToString())
                 );
             }
 

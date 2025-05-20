@@ -1,22 +1,26 @@
-﻿using System.Diagnostics;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using WpfTaskManagerApp.Models;
 using System.Net.Http.Json;
 using WpfTaskManagerApp.Configs;
 using System.Net.Http.Headers;
+using WpfTaskManagerApp.Interfaces;
 namespace WpfTaskManagerApp.Services;
+
+// API service for authentication.
 public class ApiAuthenticationService : IAuthenticationService
 {
     private readonly HttpClient _httpClient;
     private User? _currentUser;
     private readonly JsonSerializerOptions _jsonSerializerOptions;
-    private readonly IUserService _userService;
-    private readonly ITokenProvider _tokenProvider;
+    private readonly IUserService _userService; // To fetch full user details.
+    private readonly ITokenProvider _tokenProvider; // Manages auth token.
 
+    // Currently authenticated user.
     public User? CurrentUser => _currentUser;
 
+    // Constructor.
     public ApiAuthenticationService(HttpClient httpClient, IUserService userService, ITokenProvider tokenProvider)
     {
         _httpClient = httpClient;
@@ -29,109 +33,87 @@ public class ApiAuthenticationService : IAuthenticationService
         };
     }
 
+    // Logs in a user via API.
     public async Task<User?> LoginAsync(string username, string password)
     {
         var loginRequest = new LoginRequestModel { Username = username, Password = password };
         try
         {
+            // First, call identity/login endpoint.
             HttpResponseMessage identityResponse = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.AuthEndPoint}/login", loginRequest, _jsonSerializerOptions);
-            // Debug.WriteLine($"ApiAuthenticationService.LoginAsync: Identity API response status: {identityResponse.StatusCode}");
 
             if (identityResponse.IsSuccessStatusCode)
             {
                 LoginResponseModel? loginResponse = await identityResponse.Content.ReadFromJsonAsync<LoginResponseModel>(_jsonSerializerOptions);
                 if (loginResponse != null && !string.IsNullOrEmpty(loginResponse.Token))
                 {
-                    // Debug.WriteLine($"ApiAuthenticationService.LoginAsync: Identity login successful. Token received. UserId: {loginResponse.UserId}, Username: {loginResponse.Username}, Role: {loginResponse.Role}");
                     _tokenProvider.SetToken(loginResponse.Token);
 
-                    // Debug.WriteLine($"ApiAuthenticationService.LoginAsync: Attempting to fetch full user details for UserId: {loginResponse.UserId}");
+                    // Then, fetch full user details from user service.
                     User? userProfileDetails = await _userService.GetUserByIdAsync(loginResponse.UserId);
 
                     if (userProfileDetails != null)
                     {
-                        // Debug.WriteLine($"ApiAuthenticationService.LoginAsync: User API returned - ID: {userProfileDetails.Id}, Username: '{userProfileDetails.Username}', FullName: '{userProfileDetails.FullName}', Email: '{userProfileDetails.Email}', Address: '{userProfileDetails.Address}', Role (from User API): {userProfileDetails.Role}, IsActive: {userProfileDetails.IsActive}");
-                        _currentUser = userProfileDetails;
-                        _currentUser.Role = loginResponse.Role;
-                        _currentUser.Id = loginResponse.UserId;
-                        _currentUser.Username = loginResponse.Username;
-                        _currentUser.Email = loginResponse.Email;
-
-                        // Debug.WriteLine($"ApiAuthenticationService.LoginAsync: Final _currentUser object - ID: {_currentUser.Id}, Username: '{_currentUser.Username}', FullName: '{_currentUser.FullName}', Email: '{_currentUser.Email}', Address: '{_currentUser.Address}', Role: '{_currentUser.Role}', IsActive: {_currentUser.IsActive}");
+                        // Merge info from login response and user profile.
+                        _currentUser = userProfileDetails; // Base details from user service.
+                        _currentUser.Role = loginResponse.Role; // Role from login response.
+                        _currentUser.Id = loginResponse.UserId; // Ensure ID from login response.
+                        _currentUser.Username = loginResponse.Username; // Username from login response.
+                        _currentUser.Email = loginResponse.Email; // Email from login response.
                         return _currentUser;
                     }
                     else
                     {
-                        // Debug.WriteLine($"ApiAuthenticationService.LoginAsync: Failed to fetch full user details from User API for ID: {loginResponse.UserId} after identity login. UserProfileDetails is null.");
-                        _tokenProvider.ClearToken();
-                        return null;
+                        _tokenProvider.ClearToken(); // Failed to get profile.
                     }
                 }
-                // Debug.WriteLine($"Login API (Identity) response error: Invalid token or response structure. Status: {identityResponse.StatusCode}");
-            }
-            else
-            {
-                // string errorContent = await identityResponse.Content.ReadAsStringAsync();
-                // Debug.WriteLine($"Login failed (Identity API): {identityResponse.StatusCode} - {errorContent}");
             }
         }
-        catch (HttpRequestException ex) { Debug.WriteLine($"Login request error: {ex.Message}"); }
-        catch (JsonException ex) { Debug.WriteLine($"Login JSON parsing error: {ex.Message}"); }
-        catch (Exception ex) { Debug.WriteLine($"An unexpected error occurred during login: {ex.Message}"); }
+        catch (Exception)
+        {
+            // Log or handle login errors.
+        }
 
         _currentUser = null;
         _tokenProvider.ClearToken();
         return null;
     }
 
+    // Logs out the current user.
     public Task LogoutAsync()
     {
         _currentUser = null;
         _tokenProvider.ClearToken();
-        // Debug.WriteLine("User logged out.");
-        // Consider calling API logout if your identity server supports it
-        // await _httpClient.PostAsync($"{ApiConfig.BaseUrl}/{ApiConfig.AuthEndPoint}/logout", null);
+        // API logout call could be added here if supported.
         return Task.CompletedTask;
     }
 
+    // Checks if the user is currently authenticated.
     public async Task<bool> IsUserAuthenticatedAsync()
     {
-        await Task.Delay(1); // Simulate async work
+        await Task.Delay(1); // Simulate async.
         string? token = _tokenProvider.GetToken();
-        if (!string.IsNullOrEmpty(token) && _currentUser == null)
-        {
-            // This logic might be enhanced to re-fetch user details if a token exists but _currentUser is null (e.g., app restart)
-            // For now, it relies on _currentUser being populated during LoginAsync or a previous session.
-            // Debug.WriteLine("ApiAuthenticationService.IsUserAuthenticatedAsync: Token exists, but CurrentUser is null. Re-validation logic might be needed here.");
-        }
+        // Simple check: token exists and user object is populated.
         return !string.IsNullOrEmpty(token) && _currentUser != null;
     }
 
+    // Changes the password for the current user.
     public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordModel changePasswordModel)
     {
         var token = _tokenProvider.GetToken();
-        if (string.IsNullOrEmpty(token))
-        {
-            Debug.WriteLine("ChangePasswordAsync: No token available.");
-            return false;
-        }
+        if (string.IsNullOrEmpty(token)) return false; // No token.
+
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         try
         {
-            // Assuming the endpoint for changing password is under the AuthEndPoint
+            // Endpoint for password change.
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiConfig.BaseUrl}/{ApiConfig.AuthEndPoint}/change-password", changePasswordModel, _jsonSerializerOptions);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                string errorContent = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine($"ChangePasswordAsync API error: {response.StatusCode} - {errorContent}");
-            }
             return response.IsSuccessStatusCode;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Debug.WriteLine($"ChangePasswordAsync exception: {ex.Message}");
+            // Log or handle error.
         }
         return false;
     }

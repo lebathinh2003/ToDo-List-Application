@@ -1,4 +1,4 @@
-﻿using UserService.API.GrpcServices;
+﻿using TaskService.API.GrpcServices;
 
 namespace TaskService.API.Extensions;
 

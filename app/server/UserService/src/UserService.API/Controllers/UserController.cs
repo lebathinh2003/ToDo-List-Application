@@ -24,8 +24,15 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest createUserRequest)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
         var result = await _sender.Send(new CreateUserCommand
         {
+            AdminId = Guid.Parse(adminId),
             Username = createUserRequest.Username,
             Email = createUserRequest.Email,
             Password = createUserRequest.Password,
@@ -41,8 +48,15 @@ public class UserController : ControllerBase
     [HttpDelete("delete/id/{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
         var result = await _sender.Send(new DeleteUserCommand
         {
+            AdminId = Guid.Parse(adminId),
             UserId = id,
         });
         result.ThrowIfFailure();
@@ -53,8 +67,14 @@ public class UserController : ControllerBase
     [HttpPost("restore/id/{id}")]
     public async Task<IActionResult> RestoreUser(Guid id)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
         var result = await _sender.Send(new RestoreUserCommand
         {
+            AdminId = Guid.Parse(adminId),
             UserId = id,
         });
         result.ThrowIfFailure();
@@ -78,7 +98,7 @@ public class UserController : ControllerBase
         return Ok(result.Value);
     }
 
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> AdminGetUsers([FromQuery] PaginatedDTO paginatedDTO)
     {
@@ -94,7 +114,6 @@ public class UserController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest updateUserRequest)
     {
-
         var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrEmpty(userId))
@@ -119,6 +138,13 @@ public class UserController : ControllerBase
     [HttpPut("id/{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest updateUserRequest)
     {
+        var adminId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(adminId))
+        {
+            return BadRequest("AdminId is null.");
+        }
+
         if (id == Guid.Empty)
         {
             return BadRequest("Id is null.");
@@ -126,6 +152,7 @@ public class UserController : ControllerBase
 
         var result = await _sender.Send(new UpdateFullUserWithIdCommand
         {
+            AdminId = Guid.Parse(adminId),
             Id = id,
             Address = updateUserRequest.Address,
             Fullname = updateUserRequest.FullName,

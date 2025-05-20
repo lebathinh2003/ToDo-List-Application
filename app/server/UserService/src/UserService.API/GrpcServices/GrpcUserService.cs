@@ -76,4 +76,22 @@ public class GrpcUserService : GrpcUser.GrpcUserBase
             Usrname = response.Value.Username ?? "",
         };
     }
+
+    public override async Task<GrpcIdsSetDTO> SearchSimpleUser(GrpcKeywordRequest request, ServerCallContext context)
+    {
+        if (string.IsNullOrEmpty(request.Keyword))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Keyword must not be null or empty."));
+        }
+        var response = await _sender.Send(new SearchSimpleUserQuery
+        {
+            Keyword = request.Keyword
+        });
+        response.ThrowIfFailure();
+
+        return new GrpcIdsSetDTO
+        {
+            Ids = { response.Value }
+        };
+    }
 }

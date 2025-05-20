@@ -1,20 +1,27 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel; 
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows.Input;
-using WpfTaskManagerApp.Core;
-using WpfTaskManagerApp.Models;
-using WpfTaskManagerApp.Services;
-using WpfTaskManagerApp.ViewModels.Common;
-using TaskStatus = WpfTaskManagerApp.Core.TaskStatus;
+using WpfTaskManagerApp.Core; 
+using WpfTaskManagerApp.Interfaces; 
+using WpfTaskManagerApp.Models; 
+using WpfTaskManagerApp.ViewModels.Common; 
+using TaskStatus = WpfTaskManagerApp.Core.TaskStatus; 
+
 namespace WpfTaskManagerApp.ViewModels;
+
+// ViewModel for adding or editing tasks.
 public class AddEditTaskViewModel : ViewModelBase
 {
     private readonly ITaskService? _taskService;
     private readonly IUserService? _userService;
     private readonly IAuthenticationService? _authenticationService;
     private readonly ToastNotificationViewModel? _toastViewModel;
+    // Stores original task data for edit comparison.
     private TaskItem _editingTaskOriginal = new TaskItem(Guid.NewGuid(), "", "");
+    // Indicates if in edit mode.
     private bool _isEditMode;
+    // Indicates if save operation is in progress.
     private bool _isSaving;
     public bool IsSaving
     {
@@ -25,8 +32,10 @@ public class AddEditTaskViewModel : ViewModelBase
         }
     }
 
+    // Window title, changes based on edit/add mode.
     public string WindowTitle => _isEditMode ? "Edit Task" : "Add New Task";
 
+    // Task title.
     private string _title = string.Empty;
     public string Title
     {
@@ -37,23 +46,31 @@ public class AddEditTaskViewModel : ViewModelBase
         }
     }
 
+    // Task description.
     private string _description = string.Empty;
     public string Description
     {
         get => _description;
-        set => SetProperty(ref _description, value);
+        set
+        {
+            if (SetProperty(ref _description, value)) ValidateProperty(nameof(Description));
+        }
     }
 
+    // Selected task status.
     private TaskStatus _selectedStatus;
     public TaskStatus SelectedStatus
     {
         get => _selectedStatus;
         set => SetProperty(ref _selectedStatus, value);
     }
+    // Collection of all possible task statuses.
     public IEnumerable<TaskStatus> AllTaskStatuses => Enum.GetValues(typeof(TaskStatus)).Cast<TaskStatus>();
 
+    // Full list of users who can be assigned tasks.
     private ObservableCollection<User> _allAssignableUsers = new ObservableCollection<User>();
 
+    // Filtered list of assignable users for UI display.
     private ObservableCollection<User> _filteredAssignableUsers = new ObservableCollection<User>();
     public ObservableCollection<User> FilteredAssignableUsers
     {
@@ -61,7 +78,9 @@ public class AddEditTaskViewModel : ViewModelBase
         set => SetProperty(ref _filteredAssignableUsers, value);
     }
 
+    // Search text for filtering assignees.
     private string _assigneeSearchText = string.Empty;
+    // Flag to manage updates between search text and selection.
     private bool _isUpdatingTextFromSelection = false;
 
     public string AssigneeSearchText
@@ -74,38 +93,32 @@ public class AddEditTaskViewModel : ViewModelBase
                 _assigneeSearchText = value;
                 OnPropertyChanged();
                 FilterAssignableUsers();
-
-                // Nếu text thay đổi không khớp với selected user, set SelectedAssignee = null
                 if (SelectedAssignee != null && SelectedAssignee.FullName != _assigneeSearchText)
                 {
-                    Debug.WriteLine($"AssigneeSearchText set SelectedAssignee to null: {_assigneeSearchText}");
                     SelectedAssignee = null;
                 }
             }
         }
     }
 
+    // Currently selected assignee for the task.
     private User? _selectedAssignee;
     public User? SelectedAssignee
     {
         get => _selectedAssignee;
         set
         {
-            // Sử dụng SetProperty để gọi ValidateProperty và OnPropertyChanged
             if (SetProperty(ref _selectedAssignee, value, nameof(SelectedAssignee)))
             {
                 _isUpdatingTextFromSelection = true;
                 AssigneeSearchText = _selectedAssignee?.FullName ?? string.Empty;
                 _isUpdatingTextFromSelection = false;
-
-                // Sau khi chọn, danh sách filter có thể chỉ cần hiển thị item đã chọn hoặc giữ nguyên filter hiện tại
-                // FilterAssignableUsers(); // Cân nhắc có nên filter lại ở đây không
-
                 (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
     }
 
+    // Task due date.
     private DateTime? _dueDate;
     public DateTime? DueDate
     {
@@ -113,6 +126,7 @@ public class AddEditTaskViewModel : ViewModelBase
         set => SetProperty(ref _dueDate, value);
     }
 
+    // Task active status.
     private bool _isActive = true;
     public bool IsActive
     {
@@ -120,7 +134,7 @@ public class AddEditTaskViewModel : ViewModelBase
         set => SetProperty(ref _isActive, value);
     }
 
-    // ***** THUỘC TÍNH ĐỂ KIỂM SOÁT CHẾ ĐỘ CHỈ ĐỌC *****
+    // Indicates if only task status can be edited.
     private bool _isStatusOnlyEditMode = false;
     public bool IsStatusOnlyEditMode
     {
@@ -136,24 +150,14 @@ public class AddEditTaskViewModel : ViewModelBase
     public bool CanEditStatus => _authenticationService?.CurrentUser?.Role == UserRole.Admin ||
                                  (_isEditMode && _editingTaskOriginal.AssigneeId == _authenticationService?.CurrentUser?.Id);
 
-    // SelectedStatus luôn có thể chỉnh sửa
-    // ***** KẾT THÚC THUỘC TÍNH CHỈ ĐỌC *****
+    public ICommand SaveCommand { get; }
+    public ICommand CancelCommand { get; }
+    // Action to close the dialog window.
+    public Action<bool>? CloseActionWithResult { get; set; }
 
-    public ICommand SaveCommand
-    {
-        get;
-    }
-    public ICommand CancelCommand
-    {
-        get;
-    }
-    public Action<bool>? CloseActionWithResult
-    {
-        get;
-        set;
-    }
-
+    // Constructor for design-time support.
     public AddEditTaskViewModel() : this(null, null, null, null) { }
+    // Main constructor.
     public AddEditTaskViewModel(ITaskService? taskService, IUserService? userService, ToastNotificationViewModel? toastViewModel, IAuthenticationService? authenticationService)
     {
         _taskService = taskService;
@@ -163,7 +167,7 @@ public class AddEditTaskViewModel : ViewModelBase
         SaveCommand = new RelayCommand(async (_) => await SaveAsync(), CanSave);
         CancelCommand = new RelayCommand(_ => CloseActionWithResult?.Invoke(false));
 
-        if (IsInDesignModeStatic())
+        if (IsInDesignModeStatic()) // Setup for XAML designer.
         {
             Title = "Design Task";
             _allAssignableUsers.Add(new User(Guid.NewGuid(), "designer1", "d1@e.c", UserRole.Staff, "Designer Alice"));
@@ -171,15 +175,17 @@ public class AddEditTaskViewModel : ViewModelBase
             SelectedAssignee = _allAssignableUsers.FirstOrDefault();
             SelectedStatus = TaskStatus.ToDo;
             DueDate = DateTime.Now.AddDays(7);
-            IsStatusOnlyEditMode = false; // Mặc định cho design-time
+            IsStatusOnlyEditMode = false;
             UpdateReadOnlyStates();
         }
     }
+    // Checks if running in design mode.
     private static bool IsInDesignModeStatic()
     {
-        return System.ComponentModel.LicenseManager.UsageMode == System.ComponentModel.LicenseUsageMode.Designtime;
+        return LicenseManager.UsageMode == LicenseUsageMode.Designtime;
     }
 
+    // Loads users that can be assigned to tasks.
     public async Task LoadAssignableUsersAsync()
     {
         if (_userService == null) return;
@@ -194,24 +200,23 @@ public class AddEditTaskViewModel : ViewModelBase
 
             if (_isEditMode && _editingTaskOriginal.AssigneeId.HasValue)
             {
-                // Khi edit, set SelectedAssignee, điều này sẽ tự động cập nhật AssigneeSearchText
                 SelectedAssignee = _allAssignableUsers.FirstOrDefault(u => u.Id == _editingTaskOriginal.AssigneeId.Value);
             }
             else
             {
-                // Khi thêm mới, reset cả hai
                 AssigneeSearchText = string.Empty;
                 SelectedAssignee = null;
-                FilterAssignableUsers(); // Hiển thị tất cả user ban đầu
+                FilterAssignableUsers();
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error loading assignable users: {ex.Message}");
+             Debug.WriteLine($"LoadAssignableUsersAsync Error: {ex}");
             _toastViewModel?.Show("Error loading users for assignment.", ToastType.Error);
         }
     }
 
+    // Filters assignable users based on search text.
     private void FilterAssignableUsers()
     {
         if (string.IsNullOrWhiteSpace(AssigneeSearchText))
@@ -229,17 +234,17 @@ public class AddEditTaskViewModel : ViewModelBase
         }
     }
 
+    // Initializes ViewModel for adding a new task.
     public void InitializeForAdd()
     {
         _isEditMode = false;
-        IsStatusOnlyEditMode = false; // Khi thêm mới, không phải chỉ sửa status
+        IsStatusOnlyEditMode = false;
         _editingTaskOriginal = new TaskItem(Guid.NewGuid(), "", "", TaskStatus.ToDo, true)
         {
             CreatedDate = DateTime.UtcNow
         };
         PopulateFieldsFromTask(_editingTaskOriginal);
         AssigneeSearchText = string.Empty;
-        Debug.Write("InitializeForAdd set assinee to null");
         SelectedAssignee = null;
         SelectedStatus = TaskStatus.ToDo;
         IsActive = true;
@@ -248,6 +253,7 @@ public class AddEditTaskViewModel : ViewModelBase
         ClearAllErrors();
         (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
+    // Initializes ViewModel for editing an existing task.
     public void InitializeForEdit(TaskItem taskToEdit)
     {
         _isEditMode = true;
@@ -271,6 +277,7 @@ public class AddEditTaskViewModel : ViewModelBase
         (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
+    // Updates properties related to read-only state of fields.
     private void UpdateReadOnlyStates()
     {
         OnPropertyChanged(nameof(CanEditTitle));
@@ -281,6 +288,7 @@ public class AddEditTaskViewModel : ViewModelBase
         OnPropertyChanged(nameof(WindowTitle));
     }
 
+    // Populates form fields from a TaskItem object.
     private void PopulateFieldsFromTask(TaskItem task)
     {
         Title = task.Title;
@@ -290,6 +298,7 @@ public class AddEditTaskViewModel : ViewModelBase
         IsActive = task.IsActive;
     }
 
+    // Validates a specific property.
     protected override void ValidateProperty(string? propertyName)
     {
         base.ValidateProperty(propertyName);
@@ -299,38 +308,42 @@ public class AddEditTaskViewModel : ViewModelBase
             case nameof(Title):
                 if (string.IsNullOrWhiteSpace(Title)) AddError(nameof(Title), "Title is required.");
                 break;
+            case nameof(Description):
+                if (string.IsNullOrWhiteSpace(Description)) AddError(nameof(Description), "Description is required.");
+                break;
             case nameof(SelectedAssignee):
                 if (SelectedAssignee == null) AddError(nameof(SelectedAssignee), "Assignee is required.");
                 break;
-            case nameof(SelectedStatus): // Status luôn có thể thay đổi, không cần validation ở đây
+            case nameof(SelectedStatus):
                 break;
         }
         (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
+    // Validates all relevant properties.
     protected override void ValidateAllProperties()
     {
-        if (!IsStatusOnlyEditMode) // Chỉ validate các trường khác nếu không phải chế độ chỉ sửa status
+        if (!IsStatusOnlyEditMode)
         {
             ValidateProperty(nameof(Title));
+            ValidateProperty(nameof(Description));
             ValidateProperty(nameof(SelectedAssignee));
         }
     }
+    // Determines if the Save command can execute.
     private bool CanSave(object? parameter)
     {
         if (IsSaving) return false;
-
-        // Cho phép lưu nếu chỉ thay đổi status khi là staff
         if (IsStatusOnlyEditMode)
         {
             return SelectedStatus != _editingTaskOriginal.Status;
         }
-
         return !HasErrors && HasChangesForFullEdit();
     }
 
-    private bool HasChangesForFullEdit() // Kiểm tra xem có thay đổi nào không (cho chế độ edit đầy đủ)
+    // Checks if any changes were made in full edit mode.
+    private bool HasChangesForFullEdit()
     {
-        if (!_isEditMode) return true; // Luôn cho phép lưu khi thêm mới (nếu không có lỗi)
+        if (!_isEditMode) return true;
         return Title != _editingTaskOriginal.Title ||
             Description != _editingTaskOriginal.Description ||
             SelectedStatus != _editingTaskOriginal.Status ||
@@ -339,18 +352,19 @@ public class AddEditTaskViewModel : ViewModelBase
             IsActive != _editingTaskOriginal.IsActive;
     }
 
+    // Saves the task (add or update).
     private async Task SaveAsync()
     {
-        if (IsStatusOnlyEditMode) // Nếu chỉ sửa status, không cần validate các trường khác
+        if (IsStatusOnlyEditMode)
         {
             if (SelectedStatus == _editingTaskOriginal.Status)
             {
                 _toastViewModel?.Show("No changes made to the status.", ToastType.Information);
-                CloseActionWithResult?.Invoke(false); // Không có gì để lưu
+                CloseActionWithResult?.Invoke(false);
                 return;
             }
         }
-        else // Chế độ thêm mới hoặc admin sửa
+        else
         {
             ValidateAllProperties();
             if (HasErrors)
@@ -378,7 +392,7 @@ public class AddEditTaskViewModel : ViewModelBase
                 successMsg = $"Task '{_editingTaskOriginal.Title}' status updated.";
                 failureMsg = $"Failed to update status for task '{_editingTaskOriginal.Title}'.";
             }
-            else // Admin edit hoặc Add new
+            else
             {
                 TaskItem taskToSave = new TaskItem
                 {
@@ -387,7 +401,7 @@ public class AddEditTaskViewModel : ViewModelBase
                     Description = this.Description,
                     Status = this.SelectedStatus,
                     IsActive = this.IsActive,
-                    AssigneeId = SelectedAssignee!.Id, // Sẽ không null nếu không phải IsStatusOnlyEditMode và đã qua validation
+                    AssigneeId = SelectedAssignee!.Id,
                     DueDate = DueDate,
                     CreatedDate = _isEditMode ? _editingTaskOriginal.CreatedDate : DateTime.UtcNow
                 };
@@ -406,10 +420,11 @@ public class AddEditTaskViewModel : ViewModelBase
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             failureMsg = "Error saving task.";
-            Debug.WriteLine($"SaveTaskAsync Error: {ex}");
+            // Debug.WriteLine($"SaveTaskAsync Error: {ex}"); // Removed
+            _toastViewModel?.Show(failureMsg, ToastType.Error); // Corrected toast call
             success = false;
         }
         finally
@@ -419,14 +434,15 @@ public class AddEditTaskViewModel : ViewModelBase
 
         if (success)
         {
-            _toastViewModel.Show(successMsg, ToastType.Success);
+            _toastViewModel.Show(successMsg, ToastType.Success); // Corrected toast call
             CloseActionWithResult?.Invoke(true);
         }
         else
         {
-            _toastViewModel.Show(failureMsg, ToastType.Error);
+            _toastViewModel.Show(failureMsg, ToastType.Error); // Corrected toast call
         }
     }
+    // Clears all validation errors for the form.
     private void ClearAllErrors()
     {
         ClearErrors(nameof(Title));

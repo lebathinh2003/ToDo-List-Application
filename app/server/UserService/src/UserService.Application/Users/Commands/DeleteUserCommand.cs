@@ -1,5 +1,6 @@
 ﻿using Contract.Common;
 using Contract.Constants;
+using Contract.DTOs.SignalRDTOs;
 using Contract.Event.UserEvent;
 using Contract.Interfaces;
 using IdentityProto;
@@ -12,6 +13,7 @@ namespace UserService.Application.Users.Commands;
 public record DeleteUserCommand : IRequest<Result>
 {
     public Guid UserId { get; set; }
+    public Guid AdminId { get; set; } 
 
 }
 public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
@@ -77,6 +79,11 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             });
 
             await _signalRService.InvokeAction(SignalRAction.TriggerLogout.ToString(), user.Id);
+            await _signalRService.InvokeAction(SignalRAction.TriggerReload.ToString(), new RecipentsDTO
+            {
+                Recipients = new List<Guid>(),
+                ExcludeRecipients = new List<Guid> { request.AdminId }
+            });
 
             return Result.Success();
         }

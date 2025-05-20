@@ -13,212 +13,19 @@
              Background="White">
     <UserControl.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-            </ResourceDictionary.MergedDictionaries>
-
-            <ControlTemplate x:Key="ValidationErrorTemplate">
-                <StackPanel>
-                    <AdornedElementPlaceholder x:Name="controlWithError"/>
-                    <TextBlock Text="{Binding ElementName=controlWithError, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}" 
-                               Foreground="#E53935" FontSize="11" Margin="0,2,0,0"/>
-                </StackPanel>
-            </ControlTemplate>
-
-            <Style TargetType="TextBlock" x:Key="DialogLabelStyle">
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="Margin" Value="0,0,0,6"/>
-                <Setter Property="Foreground" Value="#4B5563"/>
-                <Setter Property="FontWeight" Value="Medium"/>
-            </Style>
-
-            <Style TargetType="TextBox" x:Key="DialogInputTextBoxStyle">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="10,8"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="#D1D5DB"/>
-                <Setter Property="Margin" Value="0,0,0,8"/>
-                <Setter Property="Background" Value="White"/>
-                <Setter Property="Height" Value="38"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="TextBox">
-                            <Border x:Name="border" Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4">
-                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="BorderBrush" Value="#A0AEC0"/>
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter TargetName="border" Property="BorderBrush" Value="#3B82F6"/>
-                                    <Setter TargetName="border" Property="Effect">
-                                        <Setter.Value>
-                                            <DropShadowEffect ShadowDepth="0" Color="#3B82F6" Opacity="0.2" BlurRadius="4"/>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Trigger>
-                                <Trigger Property="Validation.HasError" Value="True">
-                                    <Setter TargetName="border" Property="BorderBrush" Value="#EF4444"/>
-                                    <Setter TargetName="border" Property="BorderThickness" Value="1.5"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
-            <Style TargetType="ComboBox" x:Key="DialogComboBoxStyle">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="10,0"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="#D1D5DB"/>
-                <Setter Property="Margin" Value="0,0,0,8"/>
-                <Setter Property="Background" Value="White"/>
-                <Setter Property="Height" Value="38"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ComboBox">
-                            <Grid>
-                                <ToggleButton x:Name="ToggleButton" 
-                                              Focusable="false"
-                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                              ClickMode="Press"
-                                              Background="{TemplateBinding Background}"
-                                              BorderBrush="{TemplateBinding BorderBrush}"
-                                              BorderThickness="{TemplateBinding BorderThickness}">
-                                    <ToggleButton.Template>
-                                        <ControlTemplate TargetType="ToggleButton">
-                                            <Border x:Name="templateRoot" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
-                                                    BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
-                                                    BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
-                                                    CornerRadius="4">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Path Grid.Column="1" x:Name="Arrow" Data="M 0 0 L 4 4 L 8 0 Z" Fill="#555" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                                </Grid>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="templateRoot" Property="BorderBrush" Value="#A0AEC0"/>
-                                                </Trigger>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Setter TargetName="templateRoot" Property="BorderBrush" Value="#3B82F6"/>
-                                                </Trigger>
-                                                <Trigger Property="Validation.HasError" Value="True">
-                                                    <Setter TargetName="templateRoot" Property="BorderBrush" Value="#EF4444"/>
-                                                    <Setter TargetName="templateRoot" Property="BorderThickness" Value="1.5"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </ToggleButton.Template>
-                                </ToggleButton>
-                                <TextBox x:Name="PART_EditableTextBox"
-                                         Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, UpdateSourceTrigger=PropertyChanged}"
-                                         HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5,0,25,0"
-                                         BorderThickness="0" Background="Transparent" IsHitTestVisible="True"
-                                         Focusable="True" Padding="5,0,0,0"/>
-                                <Popup Name="PART_Popup" AllowsTransparency="true" Focusable="false" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" PopupAnimation="Slide" Placement="Bottom">
-                                    <Border Name="DropDownBorder" Background="White" BorderThickness="1" BorderBrush="#D1D5DB" CornerRadius="4" MaxHeight="{TemplateBinding MaxDropDownHeight}" MinWidth="{TemplateBinding ActualWidth}">
-                                        <Border.Effect>
-                                            <DropShadowEffect ShadowDepth="1" Color="Black" Opacity="0.1" BlurRadius="5"/>
-                                        </Border.Effect>
-                                        <ScrollViewer CanContentScroll="true">
-                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
-                                        </ScrollViewer>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-                <Style.Triggers>
-                    <Trigger Property="Validation.HasError" Value="True">
-                        <Setter Property="BorderBrush" Value="#EF4444"/>
-                        <Setter Property="BorderThickness" Value="1.5"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <Style TargetType="DatePicker" x:Key="DialogDatePickerStyle">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="10,8"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="#D1D5DB"/>
-                <Setter Property="Margin" Value="0,0,0,8"/>
-                <Setter Property="Background" Value="White"/>
-                <Setter Property="Height" Value="38"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-            </Style>
-
-            <Style TargetType="CheckBox" x:Key="DialogCheckBoxStyle">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Foreground" Value="#334155"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="Margin" Value="0,5,0,15"/>
-            </Style>
-
-            <Style TargetType="Button" x:Key="DialogPrimaryButtonStyle">
-                <Setter Property="Background" Value="#3B82F6"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Padding" Value="20,10"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="MinWidth" Value="100"/>
-                <Setter Property="Height" Value="38"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
-                                <Border.Effect>
-                                    <DropShadowEffect ShadowDepth="1" Color="#2563EB" Opacity="0.3" BlurRadius="5"/>
-                                </Border.Effect>
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#2563EB"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.65"/>
-                                    <Setter TargetName="border" Property="Background" Value="#9CA3AF"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
-            <Style TargetType="Button" x:Key="DialogSecondaryButtonStyle" BasedOn="{StaticResource DialogPrimaryButtonStyle}">
-                <Setter Property="Background" Value="#E5E7EB"/>
-                <Setter Property="Foreground" Value="#374151"/>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#D1D5DB"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
+            <!-- Chỉ giữ lại converters nếu chúng không được định nghĩa toàn cục -->
+            <converters:TaskStatusToStringConverter x:Key="TaskStatusToStringConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Border Padding="25" Background="#F9FAFB">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <TextBlock Text="{Binding WindowTitle}" FontSize="22" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding WindowTitle}" Style="{StaticResource DialogTitleHeaderStyle}"/>
 
                 <TextBlock Text="Title:" Style="{StaticResource DialogLabelStyle}"/>
                 <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
                          Style="{StaticResource DialogInputTextBoxStyle}"
-                         Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                          Margin="0,0,0,15"
                          IsEnabled="{Binding CanEditTitle}"/>
 
@@ -230,7 +37,6 @@
                          IsEnabled="{Binding CanEditDescription}"/>
 
                 <TextBlock Text="Assignee:" Style="{StaticResource DialogLabelStyle}"/>
-
                 <ComboBox ItemsSource="{Binding FilteredAssignableUsers}"
                           SelectedItem="{Binding SelectedAssignee, Mode=TwoWay}"
                           Text="{Binding AssigneeSearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -238,7 +44,6 @@
                           StaysOpenOnEdit="True" 
                           IsTextSearchEnabled="False" 
                           Style="{StaticResource DialogComboBoxStyle}"
-                          Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                           Margin="0,0,0,15"
                           IsEnabled="{Binding CanEditAssignee}">
                     <ComboBox.ItemContainerStyle>
@@ -264,13 +69,21 @@
                           SelectedItem="{Binding SelectedStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                           Style="{StaticResource DialogComboBoxStyle}"
                           Margin="0,0,0,15"
-                          IsEnabled="{Binding CanEditStatus}"/>
+                          IsEnabled="{Binding CanEditStatus}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Giả sử AllTaskStatuses là Enum và bạn muốn hiển thị string -->
+                            <TextBlock Text="{Binding Converter={StaticResource TaskStatusToStringConverter}}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
 
                 <TextBlock Text="Due Date (Optional):" Style="{StaticResource DialogLabelStyle}"/>
                 <DatePicker SelectedDate="{Binding DueDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                             Style="{StaticResource DialogDatePickerStyle}"
                             Margin="0,0,0,15"
-                            IsEnabled="{Binding CanEditIsActive}"/>
+                            IsEnabled="{Binding CanEditDueDate}"/>
 
                 <CheckBox Content="Is Active" 
                           IsChecked="{Binding IsActive}" 

@@ -1,5 +1,6 @@
 ﻿using Contract.Common;
 using Contract.Constants;
+using Contract.DTOs.SignalRDTOs;
 using Contract.Interfaces;
 using IdentityProto;
 using MediatR;
@@ -84,6 +85,12 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             {
                 await _signalRService.InvokeAction(SignalRAction.TriggerLogout.ToString(), user.Id);
             }
+
+            await _signalRService.InvokeAction(SignalRAction.TriggerReload.ToString(), new RecipentsDTO
+            {
+                Recipients = new List<Guid>(),
+                ExcludeRecipients = new List<Guid> { user.Id }
+            });
 
             return Result<bool?>.Success(true);
 

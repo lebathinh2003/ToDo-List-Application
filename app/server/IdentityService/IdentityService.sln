@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndentityService.Domain", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityService.Infrastructure", "src\IdentityService.Infrastructure\IdentityService.Infrastructure.csproj", "{9C921A14-3DAD-29ED-BE51-9B5702382AD3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{92DE67D2-C0D5-9EBD-C59B-416083B71248} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{F8BD0B97-5A0D-4F81-4B7B-121262170525} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{D87436FB-405D-FF7B-92B3-222AF0C2C3FA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{9C921A14-3DAD-29ED-BE51-9B5702382AD3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {008802B3-DDB8-414E-B07C-353905FC74F2}
