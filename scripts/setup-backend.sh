@@ -48,21 +48,6 @@ check_dotnet_ef() {
   fi
 }
 
-# Kiểm tra Docker daemon
-check_docker() {
-  if ! command -v docker &> /dev/null; then
-    echo -e "${RED}[ERROR] Docker is not installed. Please install Docker Desktop.${NC}"
-    exit 1
-  fi
-
-  if ! docker info &> /dev/null; then
-    echo -e "${RED}[ERROR] Docker daemon is not running. Start Docker Desktop.${NC}"
-    exit 1
-  fi
-
-  echo -e "${GREEN}[OK] Docker is running.${NC}"
-}
-
 # Đợi container healthy
 wait_for_healthy() {
   local container=$1
@@ -88,15 +73,19 @@ echo -e "${CYAN}=== Starting Backend Setup ===${NC}"
 
 check_dotnet
 check_dotnet_ef
-check_docker
+. ./scripts/lib.sh && check_docker
 
 echo -e "${CYAN}Starting docker-compose...${NC}"
 docker-compose up -d
+printf "\n\t*** ${GREEN}DONE RUNNING CONTAINER${NC} ***\n\n"
 
-wait_for_healthy "sqlserver"
+# wait_for_healthy "sqlserver"
 wait_for_healthy "service-bus"
 
-echo -e "${CYAN}Applying migrations...${NC}"
-bash "$(dirname "$0")/apply-migrations.sh"
+./scripts/build-all-services.sh
+printf "\n\t*** ${GREEN}DONE BUILDING ALL SERVICES${NC} ***\n\n"
+
+./scripts/apply-all-migrations.sh
+printf "\n\t*** ${GREEN}DONE APPLY ALL MIGRATIONS${NC} ***\n\n"
 
 echo -e "${GREEN}=== Backend Setup Done ===${NC}"
