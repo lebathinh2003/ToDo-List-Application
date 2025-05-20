@@ -30,7 +30,7 @@
                          IsEnabled="{Binding CanEditTitle}"/>
                 
                 <TextBlock Text="Code:" Style="{StaticResource DialogLabelStyle}"/>
-                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
+                <TextBox Text="{Binding Code, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" 
                          Style="{StaticResource DialogInputTextBoxStyle}"
                          Margin="0,0,0,15"
                          IsEnabled="{Binding CanEditCode}"/>
